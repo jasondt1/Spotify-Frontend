@@ -1,8 +1,5 @@
-"use client"
-
-import React, { useEffect, useState } from "react"
+import { cookies } from "next/headers"
 import Link from "next/link"
-import { useAuth } from "@/contexts/auth-provider"
 import type { ArtistResponseDto } from "@/dto/artist"
 import type { GenreResponseDto } from "@/dto/genre"
 import { artistService } from "@/services/artist-service"
@@ -12,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -23,45 +19,25 @@ import CreateArtist from "./components/create-artist"
 import DeleteArtist from "./components/delete-artist"
 import UpdateArtist from "./components/update-artist"
 
-export default function ArtistsPage() {
-  const [artists, setArtists] = useState<ArtistResponseDto[] | null>(null)
-  const [genres, setGenres] = useState<GenreResponseDto[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export default async function ArtistsPage() {
+  let artists: ArtistResponseDto[] = []
+  let genres: GenreResponseDto[] = []
+  let error: string | null = null
 
-  const refetch = async () => {
-    try {
-      const data = await artistService.getAll()
-      setArtists(data)
-      setError(null)
-    } catch (e: any) {
-      setError(
-        e?.response?.data?.message || e?.message || "Failed to load artists"
-      )
-    }
+  try {
+    const token = cookies().get("access_token")?.value
+    if (!token) throw new Error("Unauthorized")
+
+    artists = await artistService.getAll(token)
+    genres = await genreService.getAll(token)
+  } catch (e: any) {
+    error = e?.response?.data?.message || e?.message || "Failed to load artists"
   }
-
-  useEffect(() => {
-    refetch()
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    if (genres) return
-    ;(async () => {
-      try {
-        const list = await genreService.getAll()
-        if (!cancelled) setGenres(list)
-      } catch {}
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [genres])
 
   return (
     <div>
       <div className="mb-4">
-        <CreateArtist onCreated={refetch} genres={genres ?? undefined} />
+        <CreateArtist genres={genres} />
       </div>
       <Table>
         <TableHeader>
@@ -81,17 +57,12 @@ export default function ArtistsPage() {
               </TableCell>
             </TableRow>
           )}
-          {!error && !artists && (
-            <TableRow>
-              <TableCell colSpan={5}>Loading…</TableCell>
-            </TableRow>
-          )}
-          {!error && artists?.length === 0 && (
+          {!error && artists.length === 0 && (
             <TableRow>
               <TableCell colSpan={5}>No artists found.</TableCell>
             </TableRow>
           )}
-          {artists?.map((a, idx) => (
+          {artists.map((a, idx) => (
             <TableRow key={a.id}>
               <TableCell className="text-xs md:text-sm">{idx + 1}</TableCell>
               <TableCell>
@@ -112,12 +83,8 @@ export default function ArtistsPage() {
                   <Button asChild size="sm" variant="outline">
                     <Link href={`/admin/artists/${a.id}`}>View</Link>
                   </Button>
-                  <UpdateArtist
-                    artist={a}
-                    onUpdated={refetch}
-                    genres={genres ?? undefined}
-                  />
-                  <DeleteArtist artistId={a.id} onDeleted={refetch} />
+                  <UpdateArtist artist={a} genres={genres} />
+                  <DeleteArtist artistId={a.id} />
                 </div>
               </TableCell>
             </TableRow>

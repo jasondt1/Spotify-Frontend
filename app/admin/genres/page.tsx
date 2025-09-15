@@ -1,14 +1,10 @@
-"use client"
-
-import React, { useEffect, useState } from "react"
-import { useAuth } from "@/contexts/auth-provider"
+import { cookies } from "next/headers"
 import type { GenreResponseDto } from "@/dto/genre"
 import { genreService } from "@/services/genre-service"
 
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -19,30 +15,25 @@ import CreateGenre from "./components/create-genre"
 import DeleteGenre from "./components/delete-genre"
 import UpdateGenre from "./components/update-genre"
 
-export default function GenresPage() {
-  const [genres, setGenres] = useState<GenreResponseDto[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export default async function GenresPage() {
+  let genres: GenreResponseDto[] = []
+  let error: string | null = null
 
-  const refetch = async () => {
-    try {
-      const data = await genreService.getAll()
-      setGenres(data)
-      setError(null)
-    } catch (e: any) {
-      setError(
-        e?.response?.data?.message || e?.message || "Failed to load genres"
-      )
+  try {
+    const token = cookies().get("access_token")?.value
+    if (token) {
+      genres = await genreService.getAll(token)
+    } else {
+      error = "Unauthorized: no token"
     }
+  } catch (e: any) {
+    error = e?.response?.data?.message || e?.message || "Failed to load genres"
   }
-
-  useEffect(() => {
-    refetch()
-  }, [])
 
   return (
     <div>
       <div className="mb-4">
-        <CreateGenre onCreated={refetch} />
+        <CreateGenre />
       </div>
       <Table>
         <TableHeader>
@@ -60,24 +51,19 @@ export default function GenresPage() {
               </TableCell>
             </TableRow>
           )}
-          {!error && !genres && (
-            <TableRow>
-              <TableCell colSpan={3}>Loading…</TableCell>
-            </TableRow>
-          )}
-          {!error && genres?.length === 0 && (
+          {!error && genres.length === 0 && (
             <TableRow>
               <TableCell colSpan={3}>No genres found.</TableCell>
             </TableRow>
           )}
-          {genres?.map((g, idx) => (
+          {genres.map((g, idx) => (
             <TableRow key={g.id}>
               <TableCell className="text-xs md:text-sm">{idx + 1}</TableCell>
               <TableCell className="font-medium">{g.name}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-3">
-                  <UpdateGenre genre={g} onUpdated={refetch} />
-                  <DeleteGenre genreId={g.id} onDeleted={refetch} />
+                  <UpdateGenre genre={g} />
+                  <DeleteGenre genreId={g.id} />
                 </div>
               </TableCell>
             </TableRow>

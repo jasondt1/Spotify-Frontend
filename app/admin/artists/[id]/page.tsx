@@ -1,9 +1,5 @@
-"use client"
-
-import React, { useEffect, useState } from "react"
+import { cookies } from "next/headers"
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { useAuth } from "@/contexts/auth-provider"
 import type { AlbumResponseDto, ArtistResponseDto } from "@/dto/artist"
 import { artistService } from "@/services/artist-service"
 
@@ -22,30 +18,26 @@ import CreateAlbum from "./components/create-album"
 import DeleteAlbum from "./components/delete-album"
 import UpdateAlbum from "./components/update-album"
 
-export default function ArtistDetailPage() {
-  const params = useParams<{ id: string }>()
-  const [artist, setArtist] = useState<ArtistResponseDto | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export default async function ArtistDetailPage({
+  params,
+}: {
+  params: { id: string }
+}) {
+  let artist: ArtistResponseDto | null = null
+  let error: string | null = null
 
-  const refetch = async () => {
-    try {
-      const data = await artistService.getById(params.id)
-      setArtist(data)
-      setError(null)
-    } catch (e: any) {
-      setError(
-        e?.response?.data?.message || e?.message || "Failed to load artist"
-      )
-    }
+  try {
+    const token = cookies().get("access_token")?.value
+    if (!token) throw new Error("Unauthorized")
+
+    artist = await artistService.getById(params.id, token)
+  } catch (e: any) {
+    error = e?.response?.data?.message || e?.message || "Failed to load artist"
   }
-
-  useEffect(() => {
-    if (!params?.id) return
-    refetch()
-  }, [params?.id])
 
   return (
     <div className="space-y-6">
+      {/* HEADER */}
       <div className="flex items-start gap-6">
         {artist?.image ? (
           <img
@@ -86,10 +78,11 @@ export default function ArtistDetailPage() {
         </div>
       </div>
 
+      {/* ALBUMS */}
       <div>
         {artist?.id && (
           <div className="mb-4">
-            <CreateAlbum artistId={artist.id} onCreated={refetch} />
+            <CreateAlbum artistId={artist.id} />
           </div>
         )}
         <Table>
@@ -106,19 +99,14 @@ export default function ArtistDetailPage() {
           <TableBody>
             {error && (
               <TableRow>
-                <TableCell colSpan={5} className="text-red-500">
+                <TableCell colSpan={6} className="text-red-500">
                   {error}
                 </TableCell>
               </TableRow>
             )}
-            {!error && !artist && (
-              <TableRow>
-                <TableCell colSpan={5}>Loading…</TableCell>
-              </TableRow>
-            )}
             {!error && artist?.albums?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5}>No albums found.</TableCell>
+                <TableCell colSpan={6}>No albums found.</TableCell>
               </TableRow>
             )}
             {artist?.albums?.map((al: AlbumResponseDto, idx: number) => (
@@ -154,13 +142,9 @@ export default function ArtistDetailPage() {
                       <Link href={`/admin/albums/${al.id}`}>View</Link>
                     </Button>
                     {artist?.id && (
-                      <UpdateAlbum
-                        album={al}
-                        artistId={artist.id}
-                        onUpdated={refetch}
-                      />
+                      <UpdateAlbum album={al} artistId={artist.id} />
                     )}
-                    <DeleteAlbum albumId={al.id} onDeleted={refetch} />
+                    <DeleteAlbum albumId={al.id} />
                   </div>
                 </TableCell>
               </TableRow>

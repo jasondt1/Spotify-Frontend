@@ -11,25 +11,37 @@ export async function createArtist(
   return data
 }
 
-export async function getArtists(): Promise<ArtistResponseDto[]> {
-  const { data } = await api.get<ArtistResponseDto[]>("/api/artists")
+export async function getArtists(token?: string): Promise<ArtistResponseDto[]> {
+  const { data } = await api.get<ArtistResponseDto[]>("/api/artists", {
+    headers: authHeader(token),
+  })
   return data
 }
 
-export async function getArtistById(id: string): Promise<ArtistResponseDto> {
-  const { data } = await api.get<ArtistResponseDto>(`/api/artists/${id}`)
+export async function getArtistById(
+  id: string,
+  token?: string
+): Promise<ArtistResponseDto> {
+  const { data } = await api.get<ArtistResponseDto>(`/api/artists/${id}`, {
+    headers: authHeader(token),
+  })
   return data
 }
 
-export async function deleteArtist(id: string): Promise<void> {
-  await api.delete(`/api/artists/${id}`)
+export async function deleteArtist(id: string, token?: string): Promise<void> {
+  await api.delete(`/api/artists/${id}`, {
+    headers: authHeader(token),
+  })
 }
 
 export async function updateArtist(
   id: string,
-  dto: ArtistRequestDto
+  dto: ArtistRequestDto,
+  token?: string
 ): Promise<ArtistResponseDto> {
-  const { data } = await api.put<ArtistResponseDto>(`/api/artists/${id}`, dto)
+  const { data } = await api.put<ArtistResponseDto>(`/api/artists/${id}`, dto, {
+    headers: authHeader(token),
+  })
   return data
 }
 

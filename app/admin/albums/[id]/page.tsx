@@ -1,14 +1,6 @@
-"use client"
-
-import React, { useEffect, useState } from "react"
+import { cookies } from "next/headers"
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { useAuth } from "@/contexts/auth-provider"
-import type {
-  AlbumResponseDto,
-  ArtistResponseDto,
-  TrackResponseDto,
-} from "@/dto/artist"
+import type { AlbumResponseDto, ArtistResponseDto } from "@/dto/artist"
 import { albumService } from "@/services/album-service"
 import { artistService } from "@/services/artist-service"
 
@@ -16,7 +8,6 @@ import { formatShortDate } from "@/lib/date"
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -34,45 +25,29 @@ function formatDuration(seconds?: number) {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
-export default function AlbumDetailPage() {
-  const params = useParams<{ id: string }>()
-  const [album, setAlbum] = useState<AlbumResponseDto | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [artists, setArtists] = useState<ArtistResponseDto[] | null>(null)
+export default async function AlbumDetailPage({
+  params,
+}: {
+  params: { id: string }
+}) {
+  let album: AlbumResponseDto | null = null
+  let artists: ArtistResponseDto[] = []
+  let error: string | null = null
 
-  const refetch = async () => {
-    try {
-      const data = await albumService.getById(params.id)
-      setAlbum(data)
-      setError(null)
-    } catch (e: any) {
-      setError(
-        e?.response?.data?.message || e?.message || "Failed to load album"
-      )
-    }
+  try {
+    const token = cookies().get("access_token")?.value
+    if (!token) throw new Error("Unauthorized")
+
+    album = await albumService.getById(params.id, token)
+    artists = await artistService.getAll(token)
+  } catch (e: any) {
+    error =
+      e?.response?.data?.message || e?.message || "Failed to load album detail"
   }
-
-  useEffect(() => {
-    if (!params?.id) return
-    refetch()
-  }, [params?.id])
-
-  useEffect(() => {
-    let cancelled = false
-    if (artists) return
-    ;(async () => {
-      try {
-        const list = await artistService.getAll()
-        if (!cancelled) setArtists(list)
-      } catch {}
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [artists])
 
   return (
     <div className="space-y-6">
+      {/* HEADER */}
       <div className="flex items-start gap-6">
         {album?.image ? (
           <img
@@ -127,14 +102,14 @@ export default function AlbumDetailPage() {
         </div>
       </div>
 
+      {/* TRACKS */}
       <div>
         {album?.id && (
           <div className="mb-4">
             <CreateTrack
               albumId={album.id}
               currentArtistId={album.artist?.id}
-              onCreated={refetch}
-              artists={artists ?? undefined}
+              artists={artists}
             />
           </div>
         )}
@@ -157,17 +132,12 @@ export default function AlbumDetailPage() {
                 </TableCell>
               </TableRow>
             )}
-            {!error && !album && (
-              <TableRow>
-                <TableCell colSpan={6}>Loading…</TableCell>
-              </TableRow>
-            )}
             {!error && album?.tracks?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6}>No tracks found.</TableCell>
               </TableRow>
             )}
-            {album?.tracks?.map((t: TrackResponseDto, idx: number) => (
+            {album?.tracks?.map((t, idx) => (
               <TableRow key={t.id}>
                 <TableCell className="text-xs md:text-sm">{idx + 1}</TableCell>
                 <TableCell className="font-medium">{t.title}</TableCell>
@@ -202,10 +172,9 @@ export default function AlbumDetailPage() {
                       track={t}
                       albumId={album.id}
                       currentArtistId={album.artist?.id}
-                      onUpdated={refetch}
-                      artists={artists ?? undefined}
+                      artists={artists}
                     />
-                    <DeleteTrack trackId={t.id} onDeleted={refetch} />
+                    <DeleteTrack trackId={t.id} />
                   </div>
                 </TableCell>
               </TableRow>
