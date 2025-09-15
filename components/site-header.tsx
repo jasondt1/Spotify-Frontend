@@ -1,0 +1,106 @@
+"use client"
+
+import Link from "next/link"
+import { useAuth } from "@/contexts/auth-provider"
+import { Search } from "lucide-react"
+import { CiGlobe } from "react-icons/ci"
+import { FaHome } from "react-icons/fa"
+import { FaSpotify } from "react-icons/fa6"
+import { PiBrowsers } from "react-icons/pi"
+
+import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
+import { Input } from "./ui/input"
+
+export function SiteHeader() {
+  const { user, logout } = useAuth()
+  const displayName = user?.name
+  return (
+    <header className="bg-black sticky top-0 z-40 w-full border-b">
+      <div className="container flex py-2.5 items-center space-x-4 sm:justify-between">
+        <FaSpotify size={36} className="text-white" />
+
+        <div className="flex gap-2">
+          <Tooltip delayDuration={50}>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant={"outline"}
+                size="icon"
+                className="rounded-full w-12 h-12 font-extrabold bg-neutral-900 [&_svg]:!size-5 border-none"
+              >
+                <Link href="/">
+                  <FaHome />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Home</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="relative w-full max-w-sm">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+              size={22}
+            />
+            <Input
+              type="text"
+              placeholder="What do you want to play?"
+              className="px-12 rounded-full bg-neutral-900 w-96 h-12 border border-transparent focus:border-white focus:ring-2 focus:ring-white"
+            />
+            <Tooltip delayDuration={50}>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 border-l border-neutral-500 pl-3 cursor-default"
+                >
+                  <CiGlobe
+                    size={24}
+                    className="font-bold text-neutral-300 hover:text-white cursor-pointer"
+                  />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Browse</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+        <div className="flex items-center justify-end space-x-4">
+          {displayName ? (
+            <nav className="flex items-center space-x-3 text-sm gap-2">
+              <span className="text-neutral-300">Hi, {displayName}</span>
+              <Button
+                variant="outline"
+                className="rounded-full h-10 px-4"
+                onClick={() => {
+                  if (logout) logout()
+                }}
+              >
+                Logout
+              </Button>
+            </nav>
+          ) : (
+            <nav className="flex items-center space-x-1 text-sm gap-2">
+              <Link
+                href="/sign-up"
+                className="font-bold text-neutral-300 hover:text-white"
+              >
+                Sign Up
+              </Link>
+              <Button asChild className="rounded-full w-24 h-12 font-extrabold">
+                <Link href="/login">Login</Link>
+              </Button>
+            </nav>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
