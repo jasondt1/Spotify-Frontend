@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { genreService } from "@/services/genre-service"
 
 import { Button } from "@/components/ui/button"
@@ -26,6 +27,7 @@ export default function CreateGenre({ onCreated }: CreateGenreProps) {
   const [name, setName] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,6 +42,7 @@ export default function CreateGenre({ onCreated }: CreateGenreProps) {
       setOpen(false)
       setName("")
       onCreated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to create genre"

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { albumService } from "@/services/album-service"
 import { uploadImage } from "@/services/storage-service"
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -40,6 +41,7 @@ export default function CreateAlbum({ artistId, onCreated }: CreateAlbumProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const router = useRouter()
 
   const toLocalYMD = (d?: Date) => {
     if (!d) return undefined
@@ -73,6 +75,7 @@ export default function CreateAlbum({ artistId, onCreated }: CreateAlbumProps) {
       setImagePreview(null)
       if (fileRef.current) fileRef.current.value = ""
       onCreated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to create album"
@@ -128,6 +131,7 @@ export default function CreateAlbum({ artistId, onCreated }: CreateAlbumProps) {
                     mode="single"
                     selected={releaseDate}
                     onSelect={setReleaseDate}
+                    captionLayout="dropdown"
                   />
                 </PopoverContent>
               </Popover>

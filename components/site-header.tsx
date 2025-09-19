@@ -12,15 +12,15 @@ import {
 } from "@/components/ui/tooltip"
 import { getCurrentUser, logout } from "@/app/(main)/actions/auth"
 
-import { Input } from "./ui/input"
+import { SearchInput } from "./search-input"
 
 export async function SiteHeader() {
   const user = await getCurrentUser()
   const displayName = user?.name || null
 
   return (
-    <header className="bg-black sticky top-0 z-40 w-full border-b">
-      <div className="container flex py-2.5 items-center space-x-4 sm:justify-between">
+    <header className="bg-black sticky top-0 z-40 w-full">
+      <div className="flex pl-7 p-2.5 items-center space-x-4 sm:justify-between">
         <FaSpotify size={36} className="text-white" />
 
         <div className="flex gap-2">
@@ -47,11 +47,7 @@ export async function SiteHeader() {
               className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               size={22}
             />
-            <Input
-              type="text"
-              placeholder="What do you want to play?"
-              className="px-12 rounded-full bg-neutral-900 w-96 h-12 border border-transparent focus:border-white focus:ring-2 focus:ring-white"
-            />
+            <SearchInput />
             <Tooltip delayDuration={50}>
               <TooltipTrigger asChild>
                 <Link

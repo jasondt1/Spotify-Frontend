@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { AlbumResponseDto } from "@/dto/artist"
 import { albumService } from "@/services/album-service"
 import { uploadImage } from "@/services/storage-service"
@@ -51,6 +52,7 @@ export default function UpdateAlbum({
   const [imageError, setImageError] = useState<string | null>(null)
   const [removeExisting, setRemoveExisting] = useState(false)
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const router = useRouter()
 
   const toLocalYMD = (d?: Date) => {
     if (!d) return undefined
@@ -79,6 +81,7 @@ export default function UpdateAlbum({
       })
       setOpen(false)
       onUpdated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to update album"
@@ -136,6 +139,7 @@ export default function UpdateAlbum({
                     mode="single"
                     selected={releaseDate}
                     onSelect={setReleaseDate}
+                    captionLayout="dropdown"
                   />
                 </PopoverContent>
               </Popover>

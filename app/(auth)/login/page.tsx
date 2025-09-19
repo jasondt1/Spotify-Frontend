@@ -3,7 +3,6 @@
 import React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { authService } from "@/services/auth-service"
 import { useForm } from "react-hook-form"
 import { FaSpotify } from "react-icons/fa"
 
@@ -31,10 +30,10 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const res = await login(data.email, data.password)
+      await login(data.email, data.password)
       router.push("/")
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Login failed"
+      const msg = "Invalid email or password"
       setError("root", { type: "server", message: msg })
     }
   }

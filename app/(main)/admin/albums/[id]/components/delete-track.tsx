@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { trackService } from "@/services/track-service"
 
 import {
@@ -23,14 +24,16 @@ interface DeleteTrackProps {
 export default function DeleteTrack({ trackId, onDeleted }: DeleteTrackProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleDelete = async () => {
     if (loading) return
     setLoading(true)
     setError(null)
     try {
-      await trackService.delete(trackId)
+      await trackService.remove(trackId)
       onDeleted?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to delete track"

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { genreService } from "@/services/genre-service"
 
 import {
@@ -23,6 +24,7 @@ interface DeleteGenreProps {
 export default function DeleteGenre({ genreId, onDeleted }: DeleteGenreProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
   const handleDelete = async () => {
     if (loading) return
     setLoading(true)
@@ -30,6 +32,7 @@ export default function DeleteGenre({ genreId, onDeleted }: DeleteGenreProps) {
     try {
       await genreService.delete(genreId)
       onDeleted?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to delete genre"

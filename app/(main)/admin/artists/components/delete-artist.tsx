@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { artistService } from "@/services/artist-service"
 
 import {
@@ -26,14 +27,16 @@ export default function DeleteArtist({
 }: DeleteArtistProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleDelete = async () => {
     if (loading) return
     setLoading(true)
     setError(null)
     try {
-      await artistService.delete(artistId)
+      await artistService.remove(artistId)
       onDeleted?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||

@@ -28,7 +28,6 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     return await authService.me(token)
   } catch (e) {
-    console.error("Failed to fetch current user:", e)
     return null
   }
 }

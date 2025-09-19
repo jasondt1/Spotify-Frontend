@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { GenreResponseDto } from "@/dto/genre"
 import { genreService } from "@/services/genre-service"
 
@@ -28,6 +29,7 @@ export default function UpdateGenre({ genre, onUpdated }: UpdateGenreProps) {
   const [name, setName] = useState(genre.name)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +43,7 @@ export default function UpdateGenre({ genre, onUpdated }: UpdateGenreProps) {
       await genreService.update(genre.id, { name: name.trim() })
       setOpen(false)
       onUpdated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to update genre"

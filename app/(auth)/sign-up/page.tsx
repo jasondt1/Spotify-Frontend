@@ -42,9 +42,10 @@ export default function SignUpPage() {
     try {
       await authService.register(data)
       router.push("/login")
-    } catch (error: any) {
-      const apiMessage = error?.response?.data
-      setError("root.server", { type: "server", message: apiMessage })
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message || err?.message || "Registration failed"
+      setError("root.server", { type: "server", message: msg })
     }
   }
 

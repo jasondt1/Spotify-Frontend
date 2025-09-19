@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { GenreResponseDto } from "@/dto/genre"
 import { artistService } from "@/services/artist-service"
 import { uploadImage } from "@/services/storage-service"
@@ -45,6 +46,11 @@ export default function CreateArtist({
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
+  const [coverError, setCoverError] = useState<string | null>(null)
+  const coverInputRef = useRef<HTMLInputElement | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     if (genresProp && genresProp.length > 0) setGenres(genresProp)
@@ -58,18 +64,32 @@ export default function CreateArtist({
     setError(null)
     try {
       let image: string | undefined
+      let coverImage: string | undefined
       if (imageFile) {
         image = await uploadImage(imageFile, `artists/`)
       }
-      await artistService.create({ name: name.trim(), genreId, image })
+      if (coverFile) {
+        coverImage = await uploadImage(coverFile, `artists/covers/`)
+      }
+      await artistService.create({
+        name: name.trim(),
+        genreId,
+        image,
+        coverImage,
+      })
       setOpen(false)
       setName("")
       setGenreId("")
       setImageFile(null)
+      setCoverFile(null)
       if (imagePreview) URL.revokeObjectURL(imagePreview)
+      if (coverPreview) URL.revokeObjectURL(coverPreview)
       setImagePreview(null)
+      setCoverPreview(null)
       if (fileInputRef.current) fileInputRef.current.value = ""
+      if (coverInputRef.current) coverInputRef.current.value = ""
       onCreated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -86,12 +106,12 @@ export default function CreateArtist({
       <DialogTrigger asChild>
         <Button variant="outline">Create Artist</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] overflow-y-auto max-h-[90vh]">
         <form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>Create Artist</DialogTitle>
             <DialogDescription>
-              Enter a name and select a genre.
+              Enter a name, select a genre, and upload images.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 mt-2">
@@ -140,11 +160,6 @@ export default function CreateArtist({
                     setImageError("Please select a valid image file")
                     return
                   }
-                  const maxSize = 2 * 1024 * 1024
-                  if (file.size > maxSize) {
-                    setImageError("Image must be <= 2MB")
-                    return
-                  }
                   if (imagePreview) URL.revokeObjectURL(imagePreview)
                   setImageFile(file)
                   setImagePreview(URL.createObjectURL(file))
@@ -154,7 +169,7 @@ export default function CreateArtist({
                 <p className="text-sm text-red-500">{imageError}</p>
               )}
               {imagePreview && (
-                <div className="mt-2 flex items-start gap-3 relative">
+                <div className="mt-2 relative">
                   <img
                     src={imagePreview}
                     alt="Preview"
@@ -172,7 +187,60 @@ export default function CreateArtist({
                       if (fileInputRef.current) fileInputRef.current.value = ""
                     }}
                   >
-                    Remove Image
+                    Remove
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="artist-cover">Cover Image</Label>
+              <Input
+                id="artist-cover"
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  setCoverError(null)
+                  if (!file) {
+                    if (coverPreview) URL.revokeObjectURL(coverPreview)
+                    setCoverFile(null)
+                    setCoverPreview(null)
+                    return
+                  }
+                  if (!file.type.startsWith("image/")) {
+                    setCoverError("Please select a valid image file")
+                    return
+                  }
+                  if (coverPreview) URL.revokeObjectURL(coverPreview)
+                  setCoverFile(file)
+                  setCoverPreview(URL.createObjectURL(file))
+                }}
+              />
+              {coverError && (
+                <p className="text-sm text-red-500">{coverError}</p>
+              )}
+              {coverPreview && (
+                <div className="mt-2 relative">
+                  <img
+                    src={coverPreview}
+                    alt="Cover Preview"
+                    className="w-full aspect-video object-cover rounded-md border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="absolute top-2 right-2"
+                    onClick={() => {
+                      if (coverPreview) URL.revokeObjectURL(coverPreview)
+                      setCoverFile(null)
+                      setCoverPreview(null)
+                      setCoverError(null)
+                      if (coverInputRef.current)
+                        coverInputRef.current.value = ""
+                    }}
+                  >
+                    Remove
                   </Button>
                 </div>
               )}

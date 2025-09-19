@@ -5,6 +5,7 @@ import { albumService } from "@/services/album-service"
 import { artistService } from "@/services/artist-service"
 
 import { formatShortDate } from "@/lib/date"
+import { formatDuration } from "@/lib/format"
 import {
   Table,
   TableBody,
@@ -17,13 +18,6 @@ import {
 import CreateTrack from "./components/create-track"
 import DeleteTrack from "./components/delete-track"
 import UpdateTrack from "./components/update-track"
-
-function formatDuration(seconds?: number) {
-  if (!seconds && seconds !== 0) return "-"
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, "0")}`
-}
 
 export default async function AlbumDetailPage({
   params,
@@ -47,7 +41,6 @@ export default async function AlbumDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="flex items-start gap-6">
         {album?.image ? (
           <img
@@ -102,7 +95,6 @@ export default async function AlbumDetailPage({
         </div>
       </div>
 
-      {/* TRACKS */}
       <div>
         {album?.id && (
           <div className="mb-4">

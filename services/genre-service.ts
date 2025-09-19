@@ -1,48 +1,68 @@
 import type { GenreRequestDto, GenreResponseDto } from "@/dto/genre"
 import { api, authHeader } from "@/services/http"
 
-export async function createGenre(
+async function createGenre(
   dto: GenreRequestDto,
   token?: string
 ): Promise<GenreResponseDto> {
-  const { data } = await api.post<GenreResponseDto>("/api/genres", dto, {
-    headers: authHeader(token),
-  })
-  return data
+  try {
+    const { data } = await api.post<GenreResponseDto>("/api/genres", dto, {
+      headers: authHeader(token),
+    })
+    return data
+  } catch (err: any) {
+    throw err
+  }
 }
 
-export async function getGenres(token?: string): Promise<GenreResponseDto[]> {
-  const { data } = await api.get<GenreResponseDto[]>("/api/genres", {
-    headers: authHeader(token),
-  })
-  return data
+async function getGenres(token?: string): Promise<GenreResponseDto[]> {
+  try {
+    const { data } = await api.get<GenreResponseDto[]>("/api/genres", {
+      headers: authHeader(token),
+    })
+    return data
+  } catch (err: any) {
+    throw err
+  }
 }
 
-export async function getGenreById(
+async function getGenreById(
   id: string,
   token?: string
 ): Promise<GenreResponseDto> {
-  const { data } = await api.get<GenreResponseDto>(`/api/genres/${id}`, {
-    headers: authHeader(token),
-  })
-  return data
+  try {
+    const { data } = await api.get<GenreResponseDto>(`/api/genres/${id}`, {
+      headers: authHeader(token),
+    })
+    return data
+  } catch (err: any) {
+    throw err
+  }
 }
 
-export async function deleteGenre(id: string, token?: string): Promise<void> {
-  await api.delete(`/api/genres/${id}`, {
-    headers: authHeader(token),
-  })
+async function deleteGenre(id: string, token?: string): Promise<void> {
+  try {
+    await api.delete(`/api/genres/${id}`, {
+      headers: authHeader(token),
+    })
+  } catch (err: any) {
+    throw err
+  }
 }
 
-export async function updateGenre(
+async function updateGenre(
   id: string,
   dto: GenreRequestDto,
   token?: string
 ): Promise<GenreResponseDto> {
-  const { data } = await api.put<GenreResponseDto>(`/api/genres/${id}`, dto, {
-    headers: authHeader(token),
-  })
-  return data
+  try {
+    const { data } = await api.put<GenreResponseDto>(`/api/genres/${id}`, dto, {
+      headers: authHeader(token),
+    })
+    return data
+  } catch (err: any) {
+    throw err
+  }
 }
 
 export const genreService = {

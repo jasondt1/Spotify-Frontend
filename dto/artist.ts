@@ -4,6 +4,7 @@ export interface ArtistRequestDto {
   name: string
   genreId: string
   image?: string
+  coverImage?: string
 }
 
 export interface TrackRequestDto {
@@ -20,6 +21,7 @@ export interface TrackResponseDto {
   duration: number
   audio: string
   artists?: ArtistSimpleDto[]
+  album?: AlbumResponseDto
   createdAt: string
   updatedAt: string
 }
@@ -35,7 +37,7 @@ export interface AlbumResponseDto {
   id: string
   title: string
   releaseDate: string
-  tracks?: TrackResponseDto[]
+  tracks: TrackResponseDto[]
   image?: string
   createdAt: string
   updatedAt: string
@@ -49,6 +51,7 @@ export interface ArtistResponseDto {
   albums?: AlbumResponseDto[]
   tracks?: TrackResponseDto[]
   image?: string
+  coverImage?: string
   createdAt: string
   updatedAt: string
 }
@@ -57,4 +60,16 @@ export interface ArtistSimpleDto {
   id: string
   name: string
   image?: string
+  coverImage?: string
+}
+
+export interface TopTrackDto {
+  track: TrackResponseDto
+  playCount: number
+}
+
+export interface ArtistDetailsResponseDto {
+  artist: ArtistResponseDto
+  topTracks: TopTrackDto[]
+  monthlyListeners: number
 }

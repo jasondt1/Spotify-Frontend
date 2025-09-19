@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { ArtistResponseDto } from "@/dto/artist"
 import type { GenreResponseDto } from "@/dto/genre"
 import { artistService } from "@/services/artist-service"
@@ -44,13 +45,23 @@ export default function UpdateArtist({
   const [genres, setGenres] = useState<GenreResponseDto[]>(genresProp || [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(
     artist.image ?? null
   )
   const [imageError, setImageError] = useState<string | null>(null)
-  const [removeExisting, setRemoveExisting] = useState<boolean>(false)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement | null>(null)
+
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(
+    artist.coverImage ?? null
+  )
+  const [coverError, setCoverError] = useState<string | null>(null)
+  const [removeCover, setRemoveCover] = useState(false)
+  const coverInputRef = useRef<HTMLInputElement | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     if (genresProp && genresProp.length > 0) setGenres(genresProp)
@@ -63,20 +74,26 @@ export default function UpdateArtist({
     setLoading(true)
     setError(null)
     try {
-      let image: string | undefined | null = undefined
-      if (removeExisting && !imageFile) {
-        image = ""
-      }
-      if (imageFile) {
-        image = await uploadImage(imageFile, `artists/`)
-      }
+      let image: string | null | undefined = undefined
+      let coverImage: string | null | undefined = undefined
+
+      if (removeImage && !imageFile) image = ""
+      if (removeCover && !coverFile) coverImage = ""
+
+      if (imageFile) image = await uploadImage(imageFile, `artists/`)
+      if (coverFile)
+        coverImage = await uploadImage(coverFile, `artists/covers/`)
+
       await artistService.update(artist.id, {
         name: name.trim(),
         genreId,
         image: image ?? undefined,
+        coverImage: coverImage ?? undefined,
       })
+
       setOpen(false)
       onUpdated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -95,7 +112,7 @@ export default function UpdateArtist({
           Edit
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[520px] overflow-y-auto max-h-[90vh]">
         <form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>Edit Artist</DialogTitle>
@@ -128,25 +145,21 @@ export default function UpdateArtist({
                 </SelectContent>
               </Select>
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="artist-image">Image</Label>
               <Input
                 id="artist-image"
-                ref={fileInputRef}
+                ref={imageInputRef}
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
                   setImageError(null)
-                  setRemoveExisting(false)
+                  setRemoveImage(false)
                   if (!file) return
                   if (!file.type.startsWith("image/")) {
                     setImageError("Please select a valid image file")
-                    return
-                  }
-                  const maxSize = 2 * 1024 * 1024
-                  if (file.size > maxSize) {
-                    setImageError("Image must be <= 2MB")
                     return
                   }
                   if (imagePreview && imagePreview.startsWith("blob:")) {
@@ -160,7 +173,7 @@ export default function UpdateArtist({
                 <p className="text-sm text-red-500">{imageError}</p>
               )}
               {imagePreview && (
-                <div className="mt-2 flex items-start gap-3 relative">
+                <div className="mt-2 relative">
                   <img
                     src={imagePreview}
                     alt="Preview"
@@ -176,21 +189,20 @@ export default function UpdateArtist({
                         }
                         setImageFile(null)
                         setImagePreview(null)
-                        setImageError(null)
-                        setRemoveExisting(true)
-                        if (fileInputRef.current)
-                          fileInputRef.current.value = ""
+                        setRemoveImage(true)
+                        if (imageInputRef.current)
+                          imageInputRef.current.value = ""
                       }}
                     >
-                      Remove Image
+                      Remove
                     </Button>
-                    {artist.image && !imageFile && !removeExisting && (
+                    {artist.image && !imageFile && !removeImage && (
                       <Button
                         type="button"
                         variant="secondary"
                         onClick={() => {
                           setImagePreview(artist.image || null)
-                          setRemoveExisting(false)
+                          setRemoveImage(false)
                         }}
                       >
                         Revert
@@ -200,6 +212,74 @@ export default function UpdateArtist({
                 </div>
               )}
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="artist-cover">Cover Image</Label>
+              <Input
+                id="artist-cover"
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  setCoverError(null)
+                  setRemoveCover(false)
+                  if (!file) return
+                  if (!file.type.startsWith("image/")) {
+                    setCoverError("Please select a valid image file")
+                    return
+                  }
+                  if (coverPreview && coverPreview.startsWith("blob:")) {
+                    URL.revokeObjectURL(coverPreview)
+                  }
+                  setCoverFile(file)
+                  setCoverPreview(URL.createObjectURL(file))
+                }}
+              />
+              {coverError && (
+                <p className="text-sm text-red-500">{coverError}</p>
+              )}
+              {coverPreview && (
+                <div className="mt-2 relative">
+                  <img
+                    src={coverPreview}
+                    alt="Cover Preview"
+                    className="w-full aspect-video object-cover rounded-md border"
+                  />
+                  <div className="flex gap-2 absolute top-2 right-2">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => {
+                        if (coverPreview && coverPreview.startsWith("blob:")) {
+                          URL.revokeObjectURL(coverPreview)
+                        }
+                        setCoverFile(null)
+                        setCoverPreview(null)
+                        setRemoveCover(true)
+                        if (coverInputRef.current)
+                          coverInputRef.current.value = ""
+                      }}
+                    >
+                      Remove
+                    </Button>
+                    {artist.coverImage && !coverFile && !removeCover && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          setCoverPreview(artist.coverImage || null)
+                          setRemoveCover(false)
+                        }}
+                      >
+                        Revert
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
           <DialogFooter className="mt-4">

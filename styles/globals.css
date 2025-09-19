@@ -79,13 +79,96 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   /* Remove number input spinners and default appearance */
-  input[type='number']::-webkit-outer-spin-button,
-  input[type='number']::-webkit-inner-spin-button {
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  input[type='number'] {
+  input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
   }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar.scrollbar-hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes equalizer {
+  0% {
+    height: 20%;
+  }
+  25% {
+    height: 80%;
+  }
+  50% {
+    height: 40%;
+  }
+  75% {
+    height: 90%;
+  }
+  100% {
+    height: 20%;
+  }
+}
+
+.animate-equalizer {
+  animation: equalizer 1s ease-in-out infinite;
+}
+
+/* Reset range input */
+input[type="range"] {
+  @apply appearance-none bg-transparent cursor-pointer;
+  width: 100%;
+}
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    #22c55e var(--range-progress, 50%),
+    #525252 var(--range-progress, 50%)
+  );
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #525252;
+}
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-top: -4px; /* align center */
+  cursor: pointer;
+  transition: background 0.2s;
+}
+input[type="range"]::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
 }

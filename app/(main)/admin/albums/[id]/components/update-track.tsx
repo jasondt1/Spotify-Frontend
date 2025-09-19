@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { ArtistResponseDto, TrackResponseDto } from "@/dto/artist"
 import { artistService } from "@/services/artist-service"
 import { uploadAudio } from "@/services/storage-service"
@@ -52,6 +53,7 @@ export default function UpdateTrack({
   const [artists, setArtists] = useState<ArtistResponseDto[]>(artistsProp || [])
   const [selectedArtistId, setSelectedArtistId] = useState<string>("")
   const [selectedArtistIds, setSelectedArtistIds] = useState<string[]>([])
+  const router = useRouter()
 
   useEffect(() => {
     if (artistsProp && artistsProp.length > 0) {
@@ -90,6 +92,7 @@ export default function UpdateTrack({
       })
       setOpen(false)
       onUpdated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to update track"

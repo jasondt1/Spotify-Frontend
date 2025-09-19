@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { ArtistResponseDto } from "@/dto/artist"
 import { artistService } from "@/services/artist-service"
 import { uploadAudio } from "@/services/storage-service"
@@ -46,10 +47,13 @@ export default function CreateTrack({
   const [duration, setDuration] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lyrics, setLyrics] = useState<string>("")
+  const [syncArtist, setSyncArtist] = useState<string>("")
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [artists, setArtists] = useState<ArtistResponseDto[]>(artistsProp || [])
   const [selectedArtistId, setSelectedArtistId] = useState<string>("")
   const [selectedArtistIds, setSelectedArtistIds] = useState<string[]>([])
+  const router = useRouter()
 
   useEffect(() => {
     if (artistsProp && artistsProp.length > 0) {
@@ -83,12 +87,35 @@ export default function CreateTrack({
       setSelectedArtistId("")
       setSelectedArtistIds([])
       onCreated?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to create track"
       setError(msg)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const testSyncLyrics = async () => {
+    try {
+      if (!audioFile) return setError("Audio file is required for lyric sync test")
+      if (!lyrics.trim()) return setError("Lyrics are required for lyric sync test")
+      setError(null)
+      const fd = new FormData()
+      fd.append("audio", audioFile)
+      if (syncArtist) fd.append("artist", syncArtist)
+      fd.append("title", title || "")
+      fd.append("lyrics", lyrics)
+      const resp = await fetch("http://localhost:5000/sync-lyrics", {
+        method: "POST",
+        body: fd,
+      })
+      const data = await resp.json()
+      // Temporary: log result to console for inspection
+      console.log("/sync-lyrics result:", data)
+    } catch (err) {
+      console.error("Failed to sync lyrics:", err)
     }
   }
 
@@ -104,13 +131,22 @@ export default function CreateTrack({
             <DialogDescription>Enter track details.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 mt-2">
+          <div className="grid gap-2">
+            <Label htmlFor="track-title">Title</Label>
+            <Input
+              id="track-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+            />
+          </div>
             <div className="grid gap-2">
-              <Label htmlFor="track-title">Title</Label>
+              <Label htmlFor="sync-artist">Artist (for lyric sync)</Label>
               <Input
-                id="track-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                autoFocus
+                id="sync-artist"
+                value={syncArtist}
+                onChange={(e) => setSyncArtist(e.target.value)}
+                placeholder="Optional — used to improve matching"
               />
             </div>
             <div className="grid gap-2">
@@ -214,6 +250,22 @@ export default function CreateTrack({
                     ).padStart(2, "0")}`
                   : "No file selected"}
               </p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="track-lyrics">Lyrics (optional)</Label>
+              <textarea
+                id="track-lyrics"
+                value={lyrics}
+                onChange={(e) => setLyrics(e.target.value)}
+                rows={6}
+                className="rounded-md bg-neutral-900 border border-neutral-800 p-2 text-sm outline-none"
+                placeholder={"Paste lyrics here to test sync (temporary logs in console)"}
+              />
+              <div>
+                <Button type="button" variant="outline" onClick={testSyncLyrics}>
+                  Test Sync Lyrics
+                </Button>
+              </div>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { albumService } from "@/services/album-service"
 
 import {
@@ -23,14 +24,16 @@ interface DeleteAlbumProps {
 export default function DeleteAlbum({ albumId, onDeleted }: DeleteAlbumProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleDelete = async () => {
     if (loading) return
     setLoading(true)
     setError(null)
     try {
-      await albumService.delete(albumId)
+      await albumService.remove(albumId)
       onDeleted?.()
+      router.refresh()
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to delete album"
