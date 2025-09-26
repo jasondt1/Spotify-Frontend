@@ -1,4 +1,4 @@
-import type { TrackResponseDto } from "@/dto/artist"
+import type { LyricsLine, TrackResponseDto } from "@/dto/artist"
 
 export interface NowPlayingResponseDto {
   track: TrackResponseDto

@@ -9,6 +9,7 @@ interface ControlButtonProps {
   albumId?: string
   playlistId?: string
   firstTrackId?: string
+  trackId?: string
 }
 
 export default function ControlButton({
@@ -16,6 +17,7 @@ export default function ControlButton({
   albumId,
   playlistId,
   firstTrackId,
+  trackId,
 }: ControlButtonProps) {
   const { isPlaying, togglePlay, nowPlaying, setNowPlaying } = usePlayer()
 
@@ -24,7 +26,7 @@ export default function ControlButton({
     nowPlaying?.albumId === albumId ||
     nowPlaying?.artistId === artistId
 
-  if (isCurrent && !isPlaying) {
+  if ((isCurrent || trackId) && !isPlaying) {
     return (
       <button
         onClick={togglePlay}
@@ -35,7 +37,7 @@ export default function ControlButton({
     )
   }
 
-  if (isCurrent && isPlaying) {
+  if ((isCurrent || trackId) && isPlaying) {
     return (
       <button
         onClick={togglePlay}
@@ -51,6 +53,13 @@ export default function ControlButton({
       onClick={() => {
         if (firstTrackId) {
           setNowPlaying(firstTrackId, {
+            artistId,
+            albumId,
+            playlistId,
+          })
+        }
+        if (trackId) {
+          setNowPlaying(trackId, {
             artistId,
             albumId,
             playlistId,

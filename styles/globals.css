@@ -78,7 +78,7 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  /* Remove number input spinners and default appearance */
+
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -129,13 +129,11 @@
   animation: equalizer 1s ease-in-out infinite;
 }
 
-/* Reset range input */
 input[type="range"] {
   @apply appearance-none bg-transparent cursor-pointer;
   width: 100%;
 }
 
-/* Track */
 input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
@@ -151,7 +149,6 @@ input[type="range"]::-moz-range-track {
   background: #525252;
 }
 
-/* Thumb */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -159,7 +156,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 12px;
   border-radius: 50%;
   background: #22c55e;
-  margin-top: -4px; /* align center */
+  margin-top: -4px;
   cursor: pointer;
   transition: background 0.2s;
 }

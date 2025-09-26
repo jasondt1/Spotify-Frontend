@@ -16,5 +16,10 @@ export interface CurrentUser {
   name: string
   birthday: string
   gender: string
+  profilePicture?: string
 }
 
+export interface ChangePasswordInput {
+  oldPassword: string
+  newPassword: string
+}

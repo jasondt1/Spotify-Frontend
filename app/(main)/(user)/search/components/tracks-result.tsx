@@ -20,7 +20,6 @@ interface Props {
 
 export function TracksResult({ tracks, limit = 4, query }: Props) {
   const displayTracks = tracks.slice(0, limit)
-
   if (!displayTracks.length) return <NoResult label="Songs" query={query} />
 
   const { nowPlaying, setNowPlaying, isPlaying, togglePlay } = usePlayer()
@@ -33,29 +32,32 @@ export function TracksResult({ tracks, limit = 4, query }: Props) {
         return (
           <div
             key={track.id}
-            className={`group flex items-center gap-3 px-3 py-2 pr-0 rounded-md hover:bg-white/10 ${
+            className={`group grid items-center gap-3 rounded-md px-2 py-1.5 pr-0 hover:bg-white/10 ${
               isCurrent ? "bg-white/20" : ""
-            }`}
+            }
+            grid-cols-[48px,1fr,auto,auto,auto] sm:grid-cols-[48px,1fr,auto,auto,auto]`}
           >
-            <div className="w-[9%] min-w-[40px] relative group">
+            <div className="relative w-12 sm:w-[48px] aspect-square overflow-hidden rounded-md ml-1 shrink-0">
               {track.album?.image ? (
                 <img
                   src={track.album.image}
                   alt={track.title}
-                  className="h-11 w-11 object-cover rounded-md ml-1"
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="h-11 w-11 rounded-md bg-neutral-800 ml-1" />
+                <div className="h-full w-full bg-neutral-800" />
               )}
 
               <div
                 className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100
-                  transition-opacity duration-200 rounded-md"
+                transition-opacity duration-200 rounded-md"
               >
                 {isCurrent ? (
                   <button
                     onClick={togglePlay}
-                    className="text-white transition"
+                    className="text-white outline-none focus:opacity-100"
+                    aria-label={isPlaying ? "Pause" : "Play"}
+                    tabIndex={0}
                   >
                     {!isPlaying ? (
                       <IoIosPlay size={24} />
@@ -70,7 +72,9 @@ export function TracksResult({ tracks, limit = 4, query }: Props) {
                         artistId: track.artists?.[0]?.id,
                       })
                     }
-                    className="text-white transition"
+                    className="text-white outline-none focus:opacity-100"
+                    aria-label="Play"
+                    tabIndex={0}
                   >
                     <FaPlay size={14} />
                   </button>
@@ -78,16 +82,17 @@ export function TracksResult({ tracks, limit = 4, query }: Props) {
               </div>
             </div>
 
-            <div className="flex-1 min-w-0 -ml-1">
-              <p
-                className={`font-medium truncate hover:underline cursor-pointer ${
+            <div className="min-w-0 -translate-y-0.5 ml-0.5">
+              <Link
+                href={`/track/${track.id}`}
+                className={`truncate font-medium hover:underline cursor-pointer ${
                   isCurrent ? "text-green-500" : "text-white"
                 }`}
                 title={track.title}
               >
                 {track.title}
-              </p>
-              <div className="text-xs text-neutral-400 truncate font-medium">
+              </Link>
+              <div className="truncate text-xs font-medium text-neutral-400">
                 {(track.artists ?? []).map((artist, i, arr) => (
                   <span key={artist.id}>
                     <Link
@@ -102,15 +107,15 @@ export function TracksResult({ tracks, limit = 4, query }: Props) {
               </div>
             </div>
 
-            <div className="w-[5%] flex justify-center">
+            <div className="flex justify-center">
               <TrackLikedIndicator track={track} />
             </div>
 
-            <div className="w-[8%] text-right text-sm text-neutral-400">
+            <div className="hidden sm:block text-right text-sm text-neutral-400 translate-x-2">
               {formatDuration(track.duration)}
             </div>
 
-            <div className="w-[7%] flex justify-end">
+            <div className="flex justify-end">
               <TrackDropdownMenu track={track} />
             </div>
           </div>

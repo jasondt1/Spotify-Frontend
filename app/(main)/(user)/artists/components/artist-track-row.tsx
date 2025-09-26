@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { usePlayer } from "@/contexts/player-context"
 import type { TopTrackDto } from "@/dto/artist"
 import { FaPlay } from "react-icons/fa"
@@ -66,9 +67,14 @@ export function ArtistTrackRow({ track, index, artistId }: Props) {
       </div>
 
       <div className="flex-1 font-medium text-[15px] truncate">
-        <span className="hover:underline cursor-pointer">
+        <Link
+          href={`/track/${track.track.id}`}
+          className={`hover:underline cursor-pointer ${
+            isCurrent ? "!text-green-500" : ""
+          }`}
+        >
           {track.track.title}
-        </span>
+        </Link>
       </div>
 
       <div className="w-[20%] truncate text-sm font-medium text-gray-300 text-right">

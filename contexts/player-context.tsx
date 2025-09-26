@@ -2,11 +2,13 @@
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
 } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import type {
   AlbumResponseDto,
   ArtistResponseDto,
@@ -20,6 +22,8 @@ import { artistService } from "@/services/artist-service"
 import { nowPlayingService } from "@/services/now-playing-service"
 import { playlistService } from "@/services/playlist-service"
 import { queueService } from "@/services/queue-service"
+
+import { toast } from "@/hooks/use-toast"
 
 import { useUser } from "./user-context"
 
@@ -80,9 +84,8 @@ export function PlayerProvider({
   initialNowPlaying?: NowPlayingResponseDto | null
 }) {
   const [queue, setQueue] = useState<QueueItemResponseDto[]>(initialQueue ?? [])
-  const [nowPlaying, setNowPlayingState] = useState<NowPlayingResponseDto | null>(
-    initialNowPlaying ?? null
-  )
+  const [nowPlaying, setNowPlayingState] =
+    useState<NowPlayingResponseDto | null>(initialNowPlaying ?? null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [shuffle, setShuffle] = useState(false)
@@ -90,6 +93,7 @@ export function PlayerProvider({
   const [volume, setVolume] = useState(1)
   const [isMuted, setMuted] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const lastSavedSecRef = useRef<number>(-1)
 
   const [localQueue, setLocalQueue] = useState<TrackResponseDto[]>([])
   const [localQueueName, setLocalQueueName] = useState<string | null>(null)
@@ -98,7 +102,7 @@ export function PlayerProvider({
   const [currentTrackIndex, setCurrentTrackIndex] = useState(-1)
   const [shuffledSources, setShuffledSources] = useState<string[]>([])
 
-  const { fetchLibraries } = useUser()
+  const { fetchLibraries, currentUser } = useUser()
 
   useEffect(() => {
     const savedShuffle = localStorage.getItem("player_shuffle")
@@ -121,6 +125,28 @@ export function PlayerProvider({
     if (savedCurrentIndex) setCurrentTrackIndex(parseInt(savedCurrentIndex))
     if (savedShuffleSources) setShuffledSources(JSON.parse(savedShuffleSources))
   }, [])
+
+  useEffect(() => {
+    try {
+      if (nowPlaying?.track?.id) {
+        localStorage.setItem("player_current_track_id", nowPlaying.track.id)
+      }
+    } catch {}
+  }, [nowPlaying?.track?.id])
+
+  useEffect(() => {
+    const savedTrackId = localStorage.getItem("player_current_track_id")
+    if (nowPlaying?.track?.id && nowPlaying.track.id !== savedTrackId) {
+      setProgress(0)
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+      }
+      try {
+        localStorage.setItem("player_current_track_position", "0")
+        lastSavedSecRef.current = 0
+      } catch {}
+    }
+  }, [nowPlaying?.track?.id])
 
   useEffect(() => {
     localStorage.setItem("player_shuffle", String(shuffle))
@@ -248,6 +274,11 @@ export function PlayerProvider({
     trackId: string,
     source?: { artistId?: string; albumId?: string; playlistId?: string }
   ) => {
+    if (!currentUser) {
+      toast({
+        description: "Please log in to play music.",
+      })
+    }
     try {
       const hasSource =
         source &&
@@ -317,11 +348,35 @@ export function PlayerProvider({
       await fetchLibraries()
 
       if (audioRef.current) {
-        setProgress(0)
-        audioRef.current.src = res.track.audio
-        await audioRef.current.play()
+        const audio = audioRef.current
+        const isNewTrack = nowPlaying?.track?.id !== res.track.id
+
+        if (isNewTrack) {
+          setProgress(0)
+          audio.currentTime = 0
+          audio.pause()
+          audio.src = res.track.audio
+          audio.load()
+
+          try {
+            localStorage.setItem("player_current_track_position", "0")
+            lastSavedSecRef.current = 0
+          } catch {}
+        } else {
+          if (!audio.src) {
+            audio.src = res.track.audio
+            audio.load()
+          }
+        }
+
+        await audio.play()
         setIsPlaying(true)
+
+        try {
+          localStorage.setItem("player_current_track_id", res.track.id)
+        } catch {}
       }
+
       const currentSource =
         res.playlistId || res.albumId || res.artistId || null
       if (currentSource) {
@@ -383,15 +438,6 @@ export function PlayerProvider({
   const previousTrack = async () => {
     const audio = audioRef.current
 
-    if (audio && audio.currentTime > 3) {
-      audio.currentTime = 0
-      if (!isPlaying) {
-        audio.play()
-        setIsPlaying(true)
-      }
-      return
-    }
-
     if (playedTracks.length > 0) {
       const previousTrack = playedTracks[0]
       const currentTrack = nowPlaying?.track
@@ -417,9 +463,19 @@ export function PlayerProvider({
         setNowPlayingState(res)
 
         if (audioRef.current) {
+          const audio = audioRef.current
           setProgress(0)
-          audioRef.current.src = res.track.audio
-          await audioRef.current.play()
+          audio.currentTime = 0
+          audio.pause()
+          audio.src = res.track.audio
+          audio.load()
+
+          try {
+            localStorage.setItem("player_current_track_position", "0")
+            lastSavedSecRef.current = 0
+          } catch {}
+
+          await audio.play()
           setIsPlaying(true)
         }
       } catch (err) {
@@ -431,6 +487,11 @@ export function PlayerProvider({
     if (nowPlaying?.track?.id) {
       if (audio) {
         audio.currentTime = 0
+        setProgress(0)
+        try {
+          localStorage.setItem("player_current_track_position", "0")
+          lastSavedSecRef.current = 0
+        } catch {}
         if (!isPlaying) {
           audio.play()
           setIsPlaying(true)
@@ -440,6 +501,11 @@ export function PlayerProvider({
   }
 
   const togglePlay = () => {
+    if (!currentUser) {
+      toast({
+        description: "Please log in to play music",
+      })
+    }
     if (!audioRef.current) return
     if (!audioRef.current.src && nowPlaying?.track?.audio) {
       audioRef.current.src = nowPlaying.track.audio
@@ -458,7 +524,15 @@ export function PlayerProvider({
   }
 
   const seek = (sec: number) => {
-    if (audioRef.current) audioRef.current.currentTime = sec
+    if (audioRef.current) {
+      audioRef.current.currentTime = sec
+      try {
+        const s = Math.max(0, Math.floor(sec))
+        localStorage.setItem("player_current_track_position", String(s))
+        lastSavedSecRef.current = s
+        setProgress(sec)
+      } catch {}
+    }
   }
 
   const addToQueue = (track: TrackResponseDto) => {
@@ -491,7 +565,16 @@ export function PlayerProvider({
     const audio = audioRef.current
 
     const updateProgress = () => {
-      if (!isNaN(audio.currentTime)) setProgress(audio.currentTime)
+      if (!isNaN(audio.currentTime)) {
+        setProgress(audio.currentTime)
+        const sec = Math.max(0, Math.floor(audio.currentTime))
+        if (sec !== lastSavedSecRef.current) {
+          try {
+            localStorage.setItem("player_current_track_position", String(sec))
+            lastSavedSecRef.current = sec
+          } catch {}
+        }
+      }
     }
 
     const onEnded = () => {
@@ -523,6 +606,63 @@ export function PlayerProvider({
     if (!initialQueue) fetchQueue()
     if (!initialNowPlaying) fetchNowPlaying()
   }, [])
+
+  useEffect(() => {
+    if (nowPlaying?.track?.id && audioRef.current) {
+      const savedPosition = parseInt(
+        localStorage.getItem("player_current_track_position") || "0",
+        10
+      )
+      const savedTrackId = localStorage.getItem("player_current_track_id")
+
+      if (savedTrackId === nowPlaying.track.id && savedPosition > 0) {
+        audioRef.current.currentTime = savedPosition
+        setProgress(savedPosition)
+        lastSavedSecRef.current = savedPosition
+      }
+    }
+  }, [nowPlaying?.track?.id])
+
+  const resetAll = () => {
+    try {
+      if (audioRef.current) {
+        const a = audioRef.current
+        try {
+          a.pause()
+        } catch {}
+        a.src = ""
+        a.load()
+      }
+
+      setIsPlaying(false)
+
+      const keys = [
+        "player_shuffle",
+        "player_repeat",
+        "player_volume",
+        "player_local_queue",
+        "player_local_queue_name",
+        "player_original_queue",
+        "player_played_tracks",
+        "player_current_index",
+        "player_current_track_id",
+        "player_current_track_position",
+        "player_shuffle_sources",
+      ]
+      keys.forEach((k) => localStorage.removeItem(k))
+    } catch (e) {
+      console.warn("Player reset failed softly:", e)
+    }
+  }
+
+  const pathname = usePathname()
+  const AUTH_PATHS = new Set(["/login", "/sign-up", "/logout"])
+
+  useEffect(() => {
+    if (AUTH_PATHS.has(pathname)) {
+      resetAll()
+    }
+  }, [pathname, resetAll])
 
   return (
     <PlayerContext.Provider

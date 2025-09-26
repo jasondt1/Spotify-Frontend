@@ -1,14 +1,15 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import type { TrackResponseDto } from "@/dto/artist"
 import type { CurrentUser } from "@/dto/auth"
 import { LibraryResponseDto } from "@/dto/library"
 import type { PlaylistResponseDto } from "@/dto/playlist"
+import { authService } from "@/services/auth-service"
 import { libraryService } from "@/services/library-service"
 import { likedService } from "@/services/liked-service"
 import { playlistService } from "@/services/playlist-service"
-import { authService } from "@/services/auth-service"
 
 type UserContextType = {
   playlists: PlaylistResponseDto[]
@@ -19,6 +20,7 @@ type UserContextType = {
   fetchLibraries: () => Promise<void>
   currentUser: CurrentUser | null
   fetchCurrentUser: () => Promise<void>
+  resetAll: () => void
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -81,6 +83,26 @@ export function UserProvider({
     }
   }
 
+  const resetAll = () => {
+    try {
+      setPlaylists([])
+      setLikedTracks([])
+      setLibraries([])
+      setCurrentUser(null)
+    } catch (e) {
+      console.warn("User reset failed softly:", e)
+    }
+  }
+
+  const pathname = usePathname()
+  const AUTH_PATHS = new Set(["/logout"])
+
+  useEffect(() => {
+    if (AUTH_PATHS.has(pathname)) {
+      resetAll()
+    }
+  }, [pathname])
+
   useEffect(() => {
     if (!initialPlaylists) fetchPlaylists()
     if (!initialLikedTracks) fetchLikedTracks()
@@ -99,6 +121,7 @@ export function UserProvider({
         fetchLibraries,
         currentUser,
         fetchCurrentUser,
+        resetAll,
       }}
     >
       {children}

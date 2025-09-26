@@ -84,14 +84,15 @@ export function FullTracksResult({ tracks }: Props) {
                   <div className="h-11 w-11 rounded-md bg-neutral-800" />
                 )}
                 <div className="min-w-0">
-                  <p
+                  <Link
+                    href={`/track/${track.id}`}
                     className={`font-medium truncate hover:underline cursor-pointer ${
                       isCurrent ? "text-green-500" : "text-white"
                     }`}
                     title={track.title}
                   >
                     {track.title}
-                  </p>
+                  </Link>
                   <div className="text-xs text-neutral-400 truncate font-medium">
                     {(track.artists ?? []).map((artist, i, arr) => (
                       <span key={artist.id}>

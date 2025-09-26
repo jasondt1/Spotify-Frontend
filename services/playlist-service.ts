@@ -99,6 +99,36 @@ class PlaylistService extends BaseService {
       throw err
     }
   }
+  async addAlbum(
+    playlistId: string,
+    albumId: string,
+    token?: string
+  ): Promise<PlaylistResponseDto> {
+    try {
+      const { data } = await this.post<PlaylistResponseDto>(
+        `/api/playlists/${playlistId}/albums/${albumId}`,
+        null,
+        token
+      )
+      return data
+    } catch (err: any) {
+      throw err
+    }
+  }
+  async getByUserId(
+    userId: string,
+    token?: string
+  ): Promise<PlaylistResponseDto[]> {
+    try {
+      const { data } = await this.get<PlaylistResponseDto[]>(
+        `/api/playlists/users/${userId}`,
+        token
+      )
+      return data
+    } catch (err: any) {
+      throw err
+    }
+  }
 }
 
 export const playlistService = new PlaylistService()

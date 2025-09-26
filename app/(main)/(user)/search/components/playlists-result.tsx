@@ -17,7 +17,7 @@ export function PlaylistsResult({ playlists, limit }: Props) {
   if (!displayPlaylists.length) return null
 
   return (
-    <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
+    <div className="grid gap-0 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
       {displayPlaylists.map((playlist) => (
         <Link
           key={playlist.id}

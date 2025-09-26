@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { usePlayer } from "@/contexts/player-context"
@@ -11,13 +11,12 @@ import { IoMdMusicalNotes } from "react-icons/io"
 import { MdVolumeUp } from "react-icons/md"
 
 import { toast } from "@/hooks/use-toast"
-import { Input } from "@/components/ui/input"
 
 import { HoverWrapper } from "./hover-wrapper"
 import { Button } from "./ui/button"
 import YourLibrarySearch from "./your-library-search"
 
-export default function YourLibrary() {
+export default function YourLibrary({ widthPx }: { widthPx: number }) {
   const { libraries, playlists, fetchLibraries, fetchPlaylists } = useUser()
   const { nowPlaying, isPlaying } = usePlayer()
   const router = useRouter()
@@ -27,20 +26,25 @@ export default function YourLibrary() {
   )
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  // const [widthPx, setWidthPx] = useState<number>(0)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // useEffect(() => {
+  //   if (!containerRef.current) return
+  //   const observer = new ResizeObserver(() => {
+  //     if (containerRef.current) {
+  //       setWidthPx(containerRef.current.getBoundingClientRect().width)
+  //     }
+  //   })
+  //   observer.observe(containerRef.current)
+  //   setWidthPx(containerRef.current.getBoundingClientRect().width)
+
+  //   return () => observer.disconnect()
+  // }, [])
 
   const toggleType = (type: "playlist" | "album") => {
     setSelectedType((prev) => (prev === type ? null : type))
-  }
-
-  const handleSearchToggle = () => {
-    setIsSearchExpanded(!isSearchExpanded)
-    if (!isSearchExpanded) {
-      setSearchQuery("")
-    }
-  }
-
-  const handleSearchClear = () => {
-    setSearchQuery("")
   }
 
   const filteredLibraries = useMemo(() => {
@@ -80,51 +84,66 @@ export default function YourLibrary() {
 
   return (
     <HoverWrapper className="p-1.5 w-full">
-      <div className="flex items-center justify-between p-2 pl-4">
-        <h2 className="font-semibold">Your Library</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={handleCreatePlaylist}
-          >
-            <HiOutlinePlus />
-            Create
-          </Button>
-        </div>
-      </div>
+      {widthPx > 100 && (
+        <div className="">
+          <div className="flex items-center justify-between p-2 pl-4">
+            <h2 className="font-semibold">Your Library</h2>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={handleCreatePlaylist}
+              >
+                <HiOutlinePlus />
+                Create
+              </Button>
+            </div>
+          </div>
 
-      <div className="px-3 py-1">
-        <div className="flex gap-2 mb-2">
-          <button
-            onClick={() => toggleType("playlist")}
-            className={
-              selectedType === "playlist"
-                ? "rounded-full px-4 py-1.5 text-sm font-medium bg-white text-black"
-                : "rounded-full px-4 py-1.5 text-sm font-medium bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-            }
-          >
-            Playlists
-          </button>
-          <button
-            onClick={() => toggleType("album")}
-            className={
-              selectedType === "album"
-                ? "rounded-full px-4 py-1.5 text-sm font-medium bg-white text-black"
-                : "rounded-full px-4 py-1.5 text-sm font-medium bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-            }
-          >
-            Albums
-          </button>
-        </div>
-      </div>
+          <div className="px-3 py-1">
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => toggleType("playlist")}
+                className={
+                  selectedType === "playlist"
+                    ? "rounded-full px-4 py-1.5 text-sm font-medium bg-white text-black"
+                    : "rounded-full px-4 py-1.5 text-sm font-medium bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                }
+              >
+                Playlists
+              </button>
+              <button
+                onClick={() => toggleType("album")}
+                className={
+                  selectedType === "album"
+                    ? "rounded-full px-4 py-1.5 text-sm font-medium bg-white text-black"
+                    : "rounded-full px-4 py-1.5 text-sm font-medium bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                }
+              >
+                Albums
+              </button>
+            </div>
+          </div>
 
-      <YourLibrarySearch
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isExpanded={isSearchExpanded}
-        setIsExpanded={setIsSearchExpanded}
-      />
+          <YourLibrarySearch
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isExpanded={isSearchExpanded}
+            setIsExpanded={setIsSearchExpanded}
+          />
+        </div>
+      )}
+
+      {widthPx < 100 && (
+        <Button
+          variant="outline"
+          className="rounded-full ml-3 my-3"
+          size={"icon"}
+          onClick={handleCreatePlaylist}
+        >
+          <HiOutlinePlus />
+        </Button>
+      )}
 
       <div className="flex flex-col">
         {filteredLibraries.length === 0 ? (
@@ -194,7 +213,7 @@ export default function YourLibrary() {
                       className="w-12 h-12 object-cover rounded"
                     />
                   ) : (
-                    <div className="aspect-square min-h-12 flex items-center justify-center bg-neutral-700 rounded">
+                    <div className="min-w-12 aspect-square flex items-center justify-center bg-neutral-700 rounded">
                       <IoMdMusicalNotes
                         className="text-neutral-300 text-lg"
                         size={24}
@@ -215,7 +234,7 @@ export default function YourLibrary() {
                   className="w-12 h-12 object-cover rounded"
                 />
               ) : (
-                <div className="aspect-square min-h-12 flex items-center justify-center bg-neutral-700 rounded">
+                <div className="w-12 aspect-square flex items-center justify-center bg-neutral-700 rounded">
                   <IoMdMusicalNotes
                     className="text-neutral-300 text-lg"
                     size={24}
@@ -223,29 +242,31 @@ export default function YourLibrary() {
                 </div>
               )}
 
-              <div className="flex justify-between items-center w-full">
-                <div className="flex flex-col">
-                  <div
-                    className={`font-medium text-md ${
-                      nowPlaying?.playlistId === library.id ||
-                      nowPlaying?.albumId === library.id
-                        ? "text-green-500"
-                        : ""
-                    }`}
-                  >
-                    {library.name}
+              {widthPx > 100 && (
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex flex-col">
+                    <div
+                      className={`font-medium text-md ${
+                        nowPlaying?.playlistId === library.id ||
+                        nowPlaying?.albumId === library.id
+                          ? "text-green-500"
+                          : ""
+                      }`}
+                    >
+                      {library.name}
+                    </div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {library.type} • {library.creator}
+                    </div>
                   </div>
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {library.type} • {library.creator}
-                  </div>
-                </div>
 
-                {(nowPlaying?.playlistId === library.id ||
-                  nowPlaying?.albumId === library.id) &&
-                  isPlaying && (
-                    <MdVolumeUp size={20} className="text-green-500" />
-                  )}
-              </div>
+                  {(nowPlaying?.playlistId === library.id ||
+                    nowPlaying?.albumId === library.id) &&
+                    isPlaying && (
+                      <MdVolumeUp size={20} className="text-green-500" />
+                    )}
+                </div>
+              )}
             </Link>
           ))
         )}

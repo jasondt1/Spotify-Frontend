@@ -18,6 +18,7 @@ import {
 import CreateTrack from "./components/create-track"
 import DeleteTrack from "./components/delete-track"
 import UpdateTrack from "./components/update-track"
+import ViewLyrics from "./components/view-lyrics"
 
 export default async function AlbumDetailPage({
   params,
@@ -101,6 +102,7 @@ export default async function AlbumDetailPage({
             <CreateTrack
               albumId={album.id}
               currentArtistId={album.artist?.id}
+              currentArtistName={album.artist?.name}
               artists={artists}
             />
           </div>
@@ -160,10 +162,12 @@ export default async function AlbumDetailPage({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-3">
+                    <ViewLyrics track={t} />
                     <UpdateTrack
                       track={t}
                       albumId={album.id}
                       currentArtistId={album.artist?.id}
+                      currentArtistName={album.artist?.name}
                       artists={artists}
                     />
                     <DeleteTrack trackId={t.id} />

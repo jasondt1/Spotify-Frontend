@@ -150,3 +150,84 @@ export async function extractGradient(imagePathOrUrl: string): Promise<string> {
     return "linear-gradient(to bottom, #223337, #171717)"
   }
 }
+
+export async function extractColors(
+  imagePathOrUrl: string
+): Promise<{ dark: string; mid: string; light: string }> {
+  try {
+    const inputBuffer = await fetchAsBuffer(imagePathOrUrl)
+    const pngBuffer = await sharp(inputBuffer).png().toBuffer()
+    const colors = await getColors(pngBuffer, "image/png")
+
+    const colorStats = new Map<string, number>()
+
+    const vibrantColor = colors
+      .map((c) => {
+        const [r, g, b] = c.rgb()
+        const [h, s, l] = rgbToHsl(r, g, b)
+        const key = `${Math.round((h * 360) / 10) * 10}`
+        colorStats.set(key, (colorStats.get(key) || 0) + 1)
+        return {
+          rgb: [r, g, b] as [number, number, number],
+          h,
+          s,
+          l,
+          sat: s,
+          lum: l,
+          basic: hueBasicScore(h),
+          hueKey: key,
+        }
+      })
+      .filter((c) => c.lum > 0.15 && c.lum < 0.7)
+      .sort((a, b) => {
+        const freqA = colorStats.get(a.hueKey) || 1
+        const freqB = colorStats.get(b.hueKey) || 1
+        const scoreA = a.sat * 0.4 + a.basic * 0.3 + Math.log(freqA + 1) * 0.3
+        const scoreB = b.sat * 0.4 + b.basic * 0.3 + Math.log(freqB + 1) * 0.3
+        return scoreB - scoreA
+      })[0]
+
+    let baseRgb: [number, number, number]
+    let h: number, s: number, l: number
+
+    if (vibrantColor) {
+      baseRgb = strengthenColor(...vibrantColor.rgb)
+      ;[h, s, l] = rgbToHsl(...baseRgb)
+    } else {
+      baseRgb = [34, 51, 55]
+      ;[h, s, l] = rgbToHsl(...baseRgb)
+    }
+
+    const dark = hslToRgb(h, s, 0.15)
+
+    let midS = Math.min(s, 0.55)
+    let midL = Math.min(0.55, l + 0.2)
+    const mid = hslToRgb(h, midS, midL)
+
+    let lightS = Math.min(s, 0.5)
+    let lightL = Math.min(0.75, l + 0.35)
+    const light = hslToRgb(h, lightS, lightL)
+
+    const lum = getLuminance(dark[0], dark[1], dark[2])
+    if (lum > 0.6) {
+      return {
+        dark: "rgb(23,23,23)",
+        mid: "rgb(42,42,42)",
+        light: "rgb(68,68,68)",
+      }
+    }
+
+    return {
+      dark: `rgb(${dark[0]},${dark[1]},${dark[2]})`,
+      mid: `rgb(${mid[0]},${mid[1]},${mid[2]})`,
+      light: `rgb(${light[0]},${light[1]},${light[2]})`,
+    }
+  } catch (err) {
+    console.error("Color extraction failed:", err)
+    return {
+      dark: "rgb(23,23,23)",
+      mid: "rgb(42,42,42)",
+      light: "rgb(68,68,68)",
+    }
+  }
+}

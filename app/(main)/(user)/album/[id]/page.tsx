@@ -1,10 +1,8 @@
 import { cookies } from "next/headers"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { AlbumResponseDto } from "@/dto/artist"
 import { albumService } from "@/services/album-service"
-import { BsThreeDots } from "react-icons/bs"
-import { FaPlay, FaRegArrowAltCircleDown } from "react-icons/fa"
-import { IoIosPlay } from "react-icons/io"
 
 import { getYear } from "@/lib/date"
 import { formatTotalDuration } from "@/lib/format"
@@ -25,12 +23,9 @@ export default async function AlbumDetailPage({
   let error: string | null = null
 
   try {
-    const token = cookies().get("access_token")?.value
-    if (!token) throw new Error("Unauthorized")
-
-    album = await albumService.getById(params.id, token)
+    album = await albumService.getById(params.id)
   } catch (e: any) {
-    error = e?.response?.data?.message || e?.message || "Failed to load album"
+    redirect("/not-found")
   }
 
   const totalSeconds =

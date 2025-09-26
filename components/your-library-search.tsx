@@ -47,7 +47,7 @@ export default function YourLibrarySearch({
     >
       <div
         className={`relative flex items-center transition-all duration-300 ease-in-out overflow-hidden ${
-          isExpanded ? "w-52 opacity-100" : "w-8 opacity-100"
+          isExpanded ? "w-[97.5%] opacity-100" : "w-8 opacity-100"
         }`}
       >
         <button
@@ -63,7 +63,7 @@ export default function YourLibrarySearch({
           placeholder="Search in Your Library"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className={`w-full h-8 pl-8 pr-8 bg-neutral-800 border border-neutral-700 rounded-md text-white placeholder:text-neutral-400 text-sm transition-all duration-300 ease-in-out outline-none  ${
+          className={`w-full h-8 pl-8 pr-8 bg-neutral-800 border border-neutral-700 rounded-full text-white placeholder:text-neutral-400 text-sm transition-all duration-300 ease-in-out outline-none  ${
             isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         />

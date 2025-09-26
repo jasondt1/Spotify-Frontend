@@ -19,7 +19,14 @@ type TrackItemProps = {
 }
 
 function YourQueueTrackItemBase(
-  { track, history, queueId, queueIndex, highlight, noInitialAnimation }: TrackItemProps,
+  {
+    track,
+    history,
+    queueId,
+    queueIndex,
+    highlight,
+    noInitialAnimation,
+  }: TrackItemProps,
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const {
@@ -104,14 +111,15 @@ function YourQueueTrackItemBase(
       </div>
 
       <div className="flex-1 min-w-0 mb-0.5">
-        <p
+        <Link
+          href={`/track/${trackObj.id}`}
           className={`font-medium truncate hover:underline cursor-pointer ${
             enableHighlight ? "text-green-500" : "text-white"
           }`}
           title={trackObj.title}
         >
           {trackObj.title}
-        </p>
+        </Link>
         <div className="text-sm text-neutral-400 truncate font-medium">
           {(trackObj.artists ?? []).map(
             (artist: any, i: number, arr: any[]) => (

@@ -1,4 +1,9 @@
-import type { CurrentUser, LoginInput, RegisterInput } from "@/dto/auth"
+import type {
+  ChangePasswordInput,
+  CurrentUser,
+  LoginInput,
+  RegisterInput,
+} from "@/dto/auth"
 import { api, authHeader } from "@/services/http"
 
 async function registerUser(input: RegisterInput) {
@@ -61,9 +66,20 @@ async function logoutUser(): Promise<void> {
   }
 }
 
+async function changePassword(input: ChangePasswordInput): Promise<void> {
+  try {
+    await api.post("/api/auth/change-password", input, {
+      withCredentials: true,
+    })
+  } catch (err) {
+    throw err
+  }
+}
+
 export const authService = {
   register: registerUser,
   login: loginUser,
   me: getCurrentUser,
   logout: logoutUser,
+  changePassword,
 }

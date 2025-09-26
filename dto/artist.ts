@@ -13,6 +13,7 @@ export interface TrackRequestDto {
   audio: string
   albumId: string
   artistIds?: string[]
+  lyrics?: LyricsLine[]
 }
 
 export interface TrackResponseDto {
@@ -22,8 +23,14 @@ export interface TrackResponseDto {
   audio: string
   artists?: ArtistSimpleDto[]
   album?: AlbumResponseDto
+  lyrics?: LyricsLine[]
   createdAt: string
   updatedAt: string
+}
+
+export interface LyricsLine {
+  timestamp: number
+  text: string
 }
 
 export interface AlbumRequestDto {
@@ -68,8 +75,18 @@ export interface TopTrackDto {
   playCount: number
 }
 
+export interface TopArtistDto {
+  artist: ArtistResponseDto
+  playCount: number
+}
+
 export interface ArtistDetailsResponseDto {
   artist: ArtistResponseDto
   topTracks: TopTrackDto[]
   monthlyListeners: number
+}
+
+export type TrackWithPlayCountResponseDto = {
+  track: TrackResponseDto
+  playCount: number
 }

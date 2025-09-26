@@ -65,13 +65,14 @@ export function PlaylistTrackRow({ track, index, playlistId }: Props) {
       </div>
 
       <div className="flex-1 font-medium text-[15px] truncate flex flex-col">
-        <span
+        <Link
+          href={`/track/${track.id}`}
           className={`hover:underline cursor-pointer ${
             isCurrent ? "text-green-500" : ""
           }`}
         >
           {track.title}
-        </span>
+        </Link>
         <span className="text-xs text-neutral-400">
           {track.artists?.map((a, idx) => (
             <Link

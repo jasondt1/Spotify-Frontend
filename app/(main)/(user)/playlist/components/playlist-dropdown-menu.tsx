@@ -2,10 +2,13 @@
 
 import { useState } from "react"
 import { usePlayer } from "@/contexts/player-context"
+import { useUser } from "@/contexts/user-context"
 import { PlaylistResponseDto } from "@/dto/playlist"
+import { libraryService } from "@/services/library-service"
 import { queueService } from "@/services/queue-service"
 import { BsThreeDots } from "react-icons/bs"
-import { HiOutlineQueueList } from "react-icons/hi2"
+import { GoPlusCircle } from "react-icons/go"
+import { HiOutlineQueueList, HiOutlineTrash } from "react-icons/hi2"
 
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -29,6 +32,7 @@ export function PlaylistDropdownMenu({
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
   const { fetchQueue } = usePlayer()
+  const { currentUser, libraries } = useUser()
 
   const handleAddToQueue = async () => {
     try {
@@ -42,6 +46,32 @@ export function PlaylistDropdownMenu({
     }
   }
 
+  const handleAddToLibrary = async () => {
+    try {
+      await libraryService.addPlaylist(playlist.id)
+      toast({
+        description: `Successfully added "${playlist.name}" to your library.`,
+      })
+    } catch (err) {
+      console.error("Failed to add playlist to library:", err)
+    }
+  }
+
+  const handleRemoveFromLibrary = async () => {
+    try {
+      await libraryService.removePlaylist(playlist.id)
+      toast({
+        description: `Successfully removed "${playlist.name}" from your library.`,
+      })
+    } catch (err) {
+      console.error("Failed to remove playlist from library:", err)
+    }
+  }
+
+  const inLibrary = libraries.some((l) => l.id === playlist.id)
+  const enableAddToLibrary =
+    !!currentUser && playlist.ownerId !== currentUser.userId
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -51,6 +81,19 @@ export function PlaylistDropdownMenu({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="w-60" align="start">
+        {enableAddToLibrary &&
+          (!inLibrary ? (
+            <DropdownMenuItem onClick={handleAddToLibrary}>
+              <GoPlusCircle />
+              Add to Library
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={handleRemoveFromLibrary}>
+              <HiOutlineTrash />
+              Remove from Library
+            </DropdownMenuItem>
+          ))}
+
         {enableAddToQueue && (
           <DropdownMenuItem onClick={handleAddToQueue}>
             <HiOutlineQueueList />

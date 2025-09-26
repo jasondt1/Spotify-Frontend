@@ -1,4 +1,6 @@
 import { cookies } from "next/headers"
+import Link from "next/link"
+import { redirect } from "next/navigation"
 import { PlaylistResponseDto } from "@/dto/playlist"
 import { playlistService } from "@/services/playlist-service"
 import { IoMdMusicalNotes } from "react-icons/io"
@@ -20,13 +22,9 @@ export default async function PlaylistDetailPage({
   let error: string | null = null
 
   try {
-    const token = cookies().get("access_token")?.value
-    if (!token) throw new Error("Unauthorized")
-
-    playlist = await playlistService.getById(params.id, token)
+    playlist = await playlistService.getById(params.id)
   } catch (e: any) {
-    error =
-      e?.response?.data?.message || e?.message || "Failed to load playlist"
+    redirect("/not-found")
   }
 
   const totalSeconds =
@@ -108,10 +106,18 @@ export default async function PlaylistDetailPage({
                 {playlist.description}
               </div>
             )}
-            <div className="text-sm font-semibold text-white/60">
-              <span className="font-bold text-white">
+            <div className="text-sm font-semibold text-white/60 flex items-center gap-2">
+              <img
+                src={playlist?.owner.profilePicture}
+                alt=""
+                className="w-6 h-6 rounded-full object-cover"
+              />
+              <Link
+                className="font-bold text-white"
+                href={`/user/${playlist?.owner.userId}`}
+              >
                 {playlist?.owner?.name}
-              </span>{" "}
+              </Link>{" "}
               {(playlist?.tracks?.length ?? 0) > 0 && (
                 <span>
                   • {playlist!.tracks!.length}{" "}

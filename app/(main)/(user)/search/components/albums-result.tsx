@@ -19,7 +19,7 @@ export function AlbumsResult({ albums, limit }: Props) {
   if (!displayAlbums.length) return null
 
   return (
-    <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
+    <div className="grid gap-0 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
       {displayAlbums.map((album) => (
         <Link
           key={album.id}

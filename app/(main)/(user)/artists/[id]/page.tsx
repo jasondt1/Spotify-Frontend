@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import type {
   AlbumResponseDto,
   ArtistDetailsResponseDto,
@@ -27,20 +28,16 @@ export default async function ArtistDetailPage({
   let monthlyListeners = 0
 
   try {
-    const token = cookies().get("access_token")?.value
-    if (!token) throw new Error("Unauthorized")
-
     const details: ArtistDetailsResponseDto = await artistService.getDetails(
       params.id,
-      5,
-      token
+      5
     )
 
     artist = details.artist
     topTracks = details.topTracks
     monthlyListeners = details.monthlyListeners
   } catch (e: any) {
-    error = e?.response?.data?.message || e?.message || "Failed to load artist"
+    redirect("/not-found")
   }
 
   const coverImage = artist?.coverImage ?? null

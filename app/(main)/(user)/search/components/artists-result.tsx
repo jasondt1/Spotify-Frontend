@@ -17,7 +17,7 @@ export function ArtistsResult({ artists, limit }: Props) {
   if (!displayArtists.length) return null
 
   return (
-    <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
+    <div className="grid gap-0 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
       {displayArtists.map((artist) => (
         <Link
           key={artist.id}

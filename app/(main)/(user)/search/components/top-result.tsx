@@ -175,6 +175,13 @@ function TopResultPlaylist({
               alt={playlist!.name}
               className="h-28 w-28 rounded-lg object-cover shadow-lg"
             />
+          ) : playlist!.tracks?.length > 0 &&
+            playlist!.tracks[0].album?.image ? (
+            <img
+              src={playlist!.tracks[0].album.image}
+              alt={playlist!.name}
+              className="h-28 w-28 rounded-lg object-cover shadow-lg"
+            />
           ) : (
             <div className="flex h-28 w-28 items-center justify-center rounded-lg bg-neutral-800 text-3xl font-semibold text-neutral-400 shadow-lg">
               {renderInitial(playlist!.name)}

@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation"
 import { usePlayer } from "@/contexts/player-context"
 import { useUser } from "@/contexts/user-context"
 import type { TrackResponseDto } from "@/dto/artist"
+import { likedService } from "@/services/liked-service"
 import { playlistService } from "@/services/playlist-service"
 import { queueService } from "@/services/queue-service"
 import { BsThreeDots } from "react-icons/bs"
+import { GoPlusCircle } from "react-icons/go"
 import {
   HiOutlineMagnifyingGlass,
   HiOutlinePlus,
   HiOutlineQueueList,
   HiOutlineTrash,
 } from "react-icons/hi2"
+import { IoIosCheckmarkCircle } from "react-icons/io"
 
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -42,23 +45,40 @@ type TrackDropdownMenuProps = {
   track: TrackResponseDto
   playlistId?: string
   queueId?: string
+  isDetailPage?: boolean
 }
 
 export function TrackDropdownMenu({
   track,
   playlistId,
   queueId,
+  isDetailPage = false,
 }: TrackDropdownMenuProps) {
-  const { playlists, fetchPlaylists, fetchLibraries } = useUser()
+  const {
+    playlists,
+    fetchPlaylists,
+    fetchLibraries,
+    fetchLikedTracks,
+    likedTracks,
+  } = useUser()
   const { fetchQueue } = usePlayer()
   const [alertOpen, setAlertOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState("")
   const { toast } = useToast()
   const router = useRouter()
+  const { currentUser } = useUser()
+
+  const isLiked = !!likedTracks?.some((t) => t.id === track.id)
 
   const handleCreatePlaylist = async () => {
     try {
+      if (!currentUser) {
+        toast({
+          description: "Please log in to create playlist",
+        })
+        return
+      }
       await playlistService.create({
         name: track.title,
         description: "",
@@ -75,6 +95,12 @@ export function TrackDropdownMenu({
 
   const handleAddTrackToPlaylist = async (playlistId: string) => {
     try {
+      if (!currentUser) {
+        toast({
+          description: "Please log in to add track to playlist",
+        })
+        return
+      }
       await playlistService.addTrack(playlistId, track.id)
       toast({ description: `Successfully added to the playlist.` })
       await fetchLibraries()
@@ -101,6 +127,12 @@ export function TrackDropdownMenu({
 
   const handleAddToQueue = async () => {
     try {
+      if (!currentUser) {
+        toast({
+          description: "Please log in to add track to the queue",
+        })
+        return
+      }
       await queueService.addTrack(track.id)
       toast({
         description: `Successfully added "${track.title}" to the queue.`,
@@ -124,18 +156,54 @@ export function TrackDropdownMenu({
     }
   }
 
+  const handleLike = async () => {
+    try {
+      if (!currentUser) {
+        toast({
+          description: "Please log in to like track",
+        })
+        return
+      }
+      await likedService.like(track.id)
+      await fetchLikedTracks()
+      toast({
+        description: `Added "${track.title}" to your liked songs.`,
+      })
+    } catch (err) {
+      console.error("Failed to like track", err)
+    }
+  }
+
+  const handleUnlike = async () => {
+    try {
+      await likedService.unlike(track.id)
+      await fetchLikedTracks()
+      toast({
+        description: `Removed "${track.title}" from your liked songs.`,
+      })
+    } catch (err) {
+      console.error("Failed to unlike track", err)
+    }
+  }
+
   return (
     <>
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="hover:bg-transparent">
-            <BsThreeDots
-              size={20}
-              className={`transition-opacity duration-200 ${
-                menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-              }`}
-            />
-          </Button>
+          {!isDetailPage ? (
+            <Button variant="ghost" className="hover:bg-transparent">
+              <BsThreeDots
+                size={20}
+                className={`transition-opacity duration-200 ${
+                  menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`}
+              />
+            </Button>
+          ) : (
+            <button className="text-gray-300 hover:text-white hover:scale-110 transition-transform">
+              <BsThreeDots size={30} />
+            </button>
+          )}
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="w-56" align="start">
@@ -170,7 +238,7 @@ export function TrackDropdownMenu({
                     No playlists found
                   </DropdownMenuItem>
                 )}
-                <div className="">
+                <div>
                   {playlists
                     ?.filter((p) =>
                       p.name.toLowerCase().includes(search.toLowerCase())
@@ -187,6 +255,15 @@ export function TrackDropdownMenu({
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
+
+          <DropdownMenuItem onClick={isLiked ? handleUnlike : handleLike}>
+            {isLiked ? (
+              <IoIosCheckmarkCircle className="text-green-500" />
+            ) : (
+              <GoPlusCircle />
+            )}
+            {isLiked ? "Remove from Liked Songs" : "Add to Liked Songs"}
+          </DropdownMenuItem>
 
           {playlistId && (
             <DropdownMenuItem onClick={handleRemoveTrackFromPlaylist}>

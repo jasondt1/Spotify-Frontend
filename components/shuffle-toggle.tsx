@@ -2,8 +2,11 @@
 
 import { useMemo } from "react"
 import { usePlayer } from "@/contexts/player-context"
+import { useUser } from "@/contexts/user-context"
 import { FaRandom } from "react-icons/fa"
 import { TiArrowShuffle } from "react-icons/ti"
+
+import { toast } from "@/hooks/use-toast"
 
 type Props = {
   sourceId?: string
@@ -11,6 +14,7 @@ type Props = {
 
 export default function ShuffleToggle({ sourceId }: Props) {
   const { isShuffledFor, setShuffleFor } = usePlayer()
+  const { currentUser } = useUser()
 
   const enabled = useMemo(
     () => isShuffledFor(sourceId),
@@ -25,6 +29,12 @@ export default function ShuffleToggle({ sourceId }: Props) {
           : "text-neutral-400 hover:text-white hover:scale-110 transition-transform"
       }
       onClick={() => {
+        if (!currentUser) {
+          toast({
+            description: "Please log in to shuffle",
+          })
+          return
+        }
         if (!sourceId) return
         setShuffleFor(sourceId, !enabled)
       }}

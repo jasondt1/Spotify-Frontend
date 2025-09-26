@@ -2,8 +2,12 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { ArtistResponseDto, TrackResponseDto } from "@/dto/artist"
-import { artistService } from "@/services/artist-service"
+import type {
+  ArtistResponseDto,
+  LyricsLine,
+  TrackResponseDto,
+} from "@/dto/artist"
+import { lyricService } from "@/services/lyric-service"
 import { uploadAudio } from "@/services/storage-service"
 import { trackService } from "@/services/track-service"
 
@@ -33,6 +37,7 @@ interface UpdateTrackProps {
   albumId: string
   onUpdated?: () => void
   currentArtistId?: string
+  currentArtistName?: string
   artists?: ArtistResponseDto[]
 }
 
@@ -41,18 +46,32 @@ export default function UpdateTrack({
   albumId,
   onUpdated,
   currentArtistId,
+  currentArtistName,
   artists: artistsProp,
 }: UpdateTrackProps) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(track.title)
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [duration, setDuration] = useState<number>(track.duration)
-  const [loading, setLoading] = useState(false)
+  const [loadingSubmit, setLoadingSubmit] = useState(false)
+  const [loadingUseId, setLoadingUseId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [artists, setArtists] = useState<ArtistResponseDto[]>(artistsProp || [])
   const [selectedArtistId, setSelectedArtistId] = useState<string>("")
   const [selectedArtistIds, setSelectedArtistIds] = useState<string[]>([])
+  const [regenerateLyrics, setRegenerateLyrics] = useState(false)
+  const [audioUrlOverride, setAudioUrlOverride] = useState<string | null>(null)
+  const [ytLoading, setYtLoading] = useState(false)
+  const [ytResults, setYtResults] = useState<
+    {
+      id: string
+      title: string
+      channelTitle: string
+      durationText: string
+      thumbnail: string
+    }[]
+  >([])
   const router = useRouter()
 
   useEffect(() => {
@@ -61,6 +80,30 @@ export default function UpdateTrack({
       setArtists(filtered)
     }
   }, [artistsProp, currentArtistId])
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        setYtLoading(true)
+        setError(null)
+        const q = `${currentArtistName || ""} ${title}`.trim()
+        if (!q) {
+          setYtResults([])
+          return
+        }
+        const res = await fetch(
+          `/api/youtube/search?q=${encodeURIComponent(q)}`
+        )
+        const data = await res.json()
+        setYtResults(data.items || [])
+      } catch (err: any) {
+        setError(err?.message || "YouTube search failed")
+      } finally {
+        setYtLoading(false)
+      }
+    }
+    if (open) fetchSuggestions()
+  }, [open, currentArtistName, title])
 
   useEffect(() => {
     if (track?.artists && track.artists.length > 0) {
@@ -76,21 +119,51 @@ export default function UpdateTrack({
     if (!title.trim()) return setError("Title is required")
     if (!duration || Number(duration) <= 0)
       return setError("Duration must be > 0 (seconds)")
-    setLoading(true)
+    setLoadingSubmit(true)
     setError(null)
     try {
       let audioUrl: string | undefined
-      if (audioFile) {
+      let lyrics: LyricsLine[] = track.lyrics || []
+
+      if (audioUrlOverride) {
+        audioUrl = audioUrlOverride
+      } else if (audioFile) {
         audioUrl = await uploadAudio(audioFile, `albums/${albumId}/`)
       }
+
+      if (regenerateLyrics) {
+        if (audioFile) {
+          lyrics = await lyricService.getLyrics(
+            audioFile,
+            currentArtistName || "Unknown",
+            title
+          )
+        } else {
+          const target = audioUrl || track.audio
+          const blob = await fetch(target as string).then((r) => r.blob())
+          const file = new File([blob], "audio.mp3", {
+            type: blob.type || "audio/mpeg",
+          })
+          lyrics = await lyricService.getLyrics(
+            file,
+            currentArtistName || "Unknown",
+            title
+          )
+        }
+      }
+
       await trackService.update(track.id, {
         title: title.trim(),
         audio: audioUrl ?? track.audio,
         duration: Math.round(Number(duration)),
         albumId,
         artistIds: selectedArtistIds,
+        lyrics,
       })
       setOpen(false)
+      setAudioFile(null)
+      setAudioUrlOverride(null)
+      if (fileRef.current) fileRef.current.value = ""
       onUpdated?.()
       router.refresh()
     } catch (err: any) {
@@ -98,7 +171,7 @@ export default function UpdateTrack({
         err?.response?.data?.message || err?.message || "Failed to update track"
       setError(msg)
     } finally {
-      setLoading(false)
+      setLoadingSubmit(false)
     }
   }
 
@@ -189,42 +262,145 @@ export default function UpdateTrack({
               )}
             </div>
             <div className="grid gap-2">
+              <div className="flex items-center gap-2">
+                <Label>YouTube Suggestions</Label>
+              </div>
+              {!ytLoading && ytResults.length > 0 && (
+                <div className="mt-2 max-h-56 overflow-auto rounded border border-neutral-800">
+                  {ytResults.map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-center gap-3 p-2 hover:bg-neutral-900"
+                    >
+                      {v.thumbnail && (
+                        <img
+                          src={v.thumbnail}
+                          alt="thumb"
+                          className="w-16 h-10 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="text-sm font-medium line-clamp-1">
+                          {v.title}
+                        </div>
+                        <div className="text-xs text-neutral-400 line-clamp-1">
+                          {v.channelTitle} • {v.durationText}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!!loadingUseId}
+                        onClick={async () => {
+                          try {
+                            setLoadingUseId(v.id)
+                            setError(null)
+                            const res = await fetch(`/api/youtube/download`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ videoId: v.id, albumId }),
+                            })
+                            if (!res.ok) throw new Error(await res.text())
+                            const data = await res.json()
+                            const url = data.publicUrl as string
+                            setAudioUrlOverride(url)
+                            const audio = new Audio()
+                            audio.src = url
+                            audio.addEventListener("loadedmetadata", () => {
+                              setDuration(
+                                isFinite(audio.duration)
+                                  ? Math.round(audio.duration)
+                                  : track.duration
+                              )
+                            })
+                          } catch (err: any) {
+                            setError(err?.message || "Download failed")
+                          } finally {
+                            setLoadingUseId(null)
+                          }
+                        }}
+                      >
+                        {loadingUseId === v.id ? (
+                          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                        ) : (
+                          "Use"
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="track-audio">Replace Audio (optional)</Label>
-              <Input
-                id="track-audio"
-                type="file"
-                accept="audio/*"
-                ref={fileRef}
-                onChange={async (e) => {
-                  setError(null)
-                  const file = e.target.files?.[0]
-                  if (!file) {
-                    setAudioFile(null)
-                    setDuration(track.duration)
-                    return
-                  }
-                  setAudioFile(file)
-                  const objectUrl = URL.createObjectURL(file)
-                  const audio = new Audio()
-                  audio.src = objectUrl
-                  audio.addEventListener("loadedmetadata", () => {
-                    setDuration(
-                      isFinite(audio.duration)
-                        ? Math.round(audio.duration)
-                        : track.duration
-                    )
-                    URL.revokeObjectURL(objectUrl)
-                  })
-                  audio.addEventListener("error", () => {
-                    setError("Failed to load audio file")
-                    URL.revokeObjectURL(objectUrl)
-                  })
-                }}
+              {audioUrlOverride ? (
+                <div className="flex items-center justify-between rounded border border-neutral-800 px-3 py-2">
+                  <span className="text-sm text-neutral-300">
+                    Using YouTube audio
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setAudioUrlOverride(null)
+                      setAudioFile(null)
+                      if (fileRef.current) fileRef.current.value = ""
+                    }}
+                  >
+                    Change
+                  </Button>
+                </div>
+              ) : (
+                <Input
+                  id="track-audio"
+                  type="file"
+                  accept="audio/*"
+                  ref={fileRef}
+                  onChange={async (e) => {
+                    setError(null)
+                    const file = e.target.files?.[0]
+                    if (!file) {
+                      setAudioFile(null)
+                      setDuration(track.duration)
+                      return
+                    }
+                    setAudioFile(file)
+                    const objectUrl = URL.createObjectURL(file)
+                    const audio = new Audio()
+                    audio.src = objectUrl
+                    audio.addEventListener("loadedmetadata", () => {
+                      setDuration(
+                        isFinite(audio.duration)
+                          ? Math.round(audio.duration)
+                          : track.duration
+                      )
+                      URL.revokeObjectURL(objectUrl)
+                    })
+                    audio.addEventListener("error", () => {
+                      setError("Failed to load audio file")
+                      URL.revokeObjectURL(objectUrl)
+                    })
+                  }}
+                />
+              )}
+              {!!duration && (
+                <p className="text-sm text-neutral-400">
+                  Current duration: {Math.floor(duration / 60)}:
+                  {String(duration % 60).padStart(2, "0")}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                id="regenerate-lyrics"
+                type="checkbox"
+                checked={regenerateLyrics}
+                onChange={(e) => setRegenerateLyrics(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
               />
-              <p className="text-sm text-neutral-400">
-                Current duration: {Math.floor(duration / 60)}:
-                {String(duration % 60).padStart(2, "0")}
-              </p>
+              <Label htmlFor="regenerate-lyrics" className="text-sm">
+                Regenerate lyrics
+              </Label>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
@@ -234,8 +410,15 @@ export default function UpdateTrack({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save changes"}
+            <Button type="submit" disabled={loadingSubmit}>
+              {loadingSubmit ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                  Updating...
+                </span>
+              ) : (
+                "Save changes"
+              )}
             </Button>
           </DialogFooter>
         </form>

@@ -21,7 +21,7 @@ export function SearchInput() {
     if (!query) return
     const handler = setTimeout(() => {
       router.push(`/search/${encodeURIComponent(query)}`)
-    }, 500)
+    }, 100)
 
     return () => clearTimeout(handler)
   }, [query, router])
@@ -32,7 +32,7 @@ export function SearchInput() {
       value={query}
       onChange={(e) => setQuery(e.target.value)}
       placeholder="What do you want to play?"
-      className="px-12 rounded-full bg-neutral-900 w-96 h-12 border border-transparent focus:border-white focus:ring-2 focus:ring-white"
+      className="px-12 rounded-full bg-neutral-900 w-full sm:w-96 h-12 border border-transparent focus:border-white focus:ring-2 focus:ring-white"
     />
   )
 }
