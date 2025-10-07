@@ -6,7 +6,7 @@ RUN npm ci
 
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

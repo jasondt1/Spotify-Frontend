@@ -47,14 +47,14 @@ export default function YourQueue() {
   }
 
   return (
-    <HoverWrapper className="p-1.5 w-full flex flex-col gap-2">
-      <div className="flex items-center justify-between my-4 mb-4">
+    <HoverWrapper className="flex w-full flex-col gap-2 p-1.5">
+      <div className="flex items-center justify-between my-4">
         <YourQueueTabs tab={tab} setTab={setTab} />
       </div>
 
       {tab === "queue" && (
         <>
-          <h2 className="font-semibold text-white ml-3">Now Playing</h2>
+          <h2 className="ml-3 font-semibold text-white">Now Playing</h2>
           {nowPlaying && (
             <YourQueueTrackItem
               track={nowPlaying.track}
@@ -65,12 +65,12 @@ export default function YourQueue() {
 
           {queue.length > 0 && (
             <div className="flex flex-col">
-              <div className="flex justify-between items-center">
-                <h2 className="font-semibold text-white ml-3 mb-2">
+              <div className="flex items-center justify-between">
+                <h2 className="ml-3 mb-2 font-semibold text-white">
                   Next in queue
                 </h2>
                 <p
-                  className="text-neutral-400 text-sm hover:text-white cursor-pointer mr-3"
+                  className="mr-3 cursor-pointer text-sm text-neutral-400 hover:text-white"
                   onClick={handleClearQueue}
                 >
                   Clear Queue
@@ -91,7 +91,7 @@ export default function YourQueue() {
 
           {localQueue.length > 0 && (
             <div className="flex flex-col">
-              <h2 className="font-semibold text-white ml-3 mb-2">
+              <h2 className="ml-3 mb-2 font-semibold text-white">
                 Next from {localQueueName}
               </h2>
               <AnimatePresence mode="popLayout" initial={false}>
