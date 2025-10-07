@@ -15,8 +15,8 @@ export default function LogoutPage() {
 
       setTimeout(() => {
         window.location.reload()
-      }, 100)
-    }, 100)
+      }, 1000)
+    }, 1000)
 
     return () => clearTimeout(timer)
   }, [router])
