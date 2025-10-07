@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
+  compress: true,
   reactStrictMode: false,
   eslint: {
     // Do not fail the production build on ESLint warnings/errors
@@ -43,7 +45,7 @@ const nextConfig = {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
       // Optional perf deps for "ws"; safe to skip bundling
-      "bufferutil": false,
+      bufferutil: false,
       "utf-8-validate": false,
       // node-fetch optional legacy codec support
       encoding: false,
