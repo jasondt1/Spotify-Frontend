@@ -345,7 +345,7 @@ export function PlayerProvider({
       }
 
       setNowPlayingState(res)
-      await fetchLibraries()
+      // await fetchLibraries()
 
       if (audioRef.current) {
         const audio = audioRef.current
