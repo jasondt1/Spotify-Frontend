@@ -4,7 +4,7 @@ import Cookies from "js-cookie"
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.API_BASE_URL ||
-  "http://localhost:8080"
+  "https://api-gateway-spotify-153611945963.asia-southeast2.run.app"
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
