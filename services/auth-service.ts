@@ -49,9 +49,11 @@ async function loginUser(input: LoginInput) {
 
 async function dummyLogin() {
   try {
-    const { data } = await api.post("/api/auth/auto-login", {
-      withCredentials: true,
-    })
+    const { data } = await api.post(
+      "/api/auth/auto-login",
+      null,
+      { withCredentials: true }
+    )
     return data
   } catch (err) {
     throw err
