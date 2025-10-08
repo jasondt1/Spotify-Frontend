@@ -47,6 +47,17 @@ async function loginUser(input: LoginInput) {
   }
 }
 
+async function dummyLogin() {
+  try {
+    const { data } = await api.post("/api/auth/auto-login", {
+      withCredentials: true,
+    })
+    return data
+  } catch (err) {
+    throw err
+  }
+}
+
 async function getCurrentUser(token?: string): Promise<CurrentUser> {
   try {
     const { data } = await api.get<CurrentUser>("/api/users/me", {
@@ -79,6 +90,7 @@ async function changePassword(input: ChangePasswordInput): Promise<void> {
 export const authService = {
   register: registerUser,
   login: loginUser,
+  dummy: dummyLogin,
   me: getCurrentUser,
   logout: logoutUser,
   changePassword,
