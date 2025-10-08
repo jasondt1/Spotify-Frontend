@@ -14,6 +14,13 @@ export async function login(email: string, password: string) {
   redirect("/")
 }
 
+export async function dummyLogin() {
+  const { token } = await authService.dummy()
+  const cookieStore = cookies()
+  cookieStore.set(TOKEN_KEY, token, { httpOnly: false, path: "/" })
+  redirect("/")
+}
+
 export async function logout() {
   const cookieStore = cookies()
   cookieStore.set(TOKEN_KEY, "", { maxAge: 0, path: "/" })
